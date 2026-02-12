@@ -1,12 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import "./Login.css";
+import logo from "../../assets/up-text-icon.jpg";
 
-const Login = () => {
+const Login = ({ onLogin }) => {
+  const [email, setEmail] = useState("");
+
+  const handleLogin = () => {
+    if (!email) return;
+
+    // Simple role detection
+    const role = email.includes("manager") ? "manager" : "employee";
+
+    const userData = {
+      name: email.split("@")[0],
+      role,
+    };
+
+    onLogin(userData); // 🔥 This sends user to Dashboard
+  };
+
   return (
     <div className="login-page">
       {/* Header */}
       <header className="login-header">
         <div className="logo">
+          <img src={logo} alt="Logo" />
           <span className="logo-text">SHIFT-UP</span>
         </div>
 
@@ -23,7 +41,11 @@ const Login = () => {
         <p>Enter your Credentials to access your account</p>
 
         <label>Email address</label>
-        <input type="email" placeholder="Enter your email" />
+        <input
+          type="email"
+          placeholder="Enter your email"
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         <div className="password-row">
           <label>Password</label>
@@ -36,7 +58,9 @@ const Login = () => {
           <span>Remember for 30 days</span>
         </div>
 
-        <button className="login-btn">Login</button>
+        <button className="login-btn" onClick={handleLogin}>
+          Login
+        </button>
 
         <div className="socials">
           <button className="social-btn">Sign in with Google</button>

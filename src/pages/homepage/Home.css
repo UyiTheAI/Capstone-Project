@@ -2,14 +2,14 @@
   box-sizing: border-box;
 }
 
-.su-page {
+.page {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #111827;
   background: #f9fafb;
 }
 
 /* Header */
-.su-header {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -17,24 +17,42 @@
   background: #fbbf24;
 }
 
-.su-logo {
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.su-nav a {
+.title{
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.logo img {
+  border-radius: 15px;
+}
+
+.nav-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav a {
   margin: 0 12px;
   text-decoration: none;
   color: #111827;
   font-size: 0.95rem;
 }
 
-.su-header-actions {
+.header-actions {
   display: flex;
   gap: 8px;
 }
 
-.su-btn {
+.btn {
   border-radius: 999px;
   padding: 8px 16px;
   font-size: 0.9rem;
@@ -42,18 +60,18 @@
   border: none;
 }
 
-.su-btn-outline {
+.btn-outline {
   background: transparent;
   border: 1px solid #111827;
 }
 
-.su-btn-primary {
+.btn-primary {
   background: #111827;
   color: #f9fafb;
 }
 
 /* Hero */
-.su-hero {
+.hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   align-items: center;
@@ -61,28 +79,36 @@
   background: white;
 }
 
-.su-hero-text h1 {
+.hero-text h1 {
   font-size: 2.4rem;
   margin-bottom: 8px;
 }
 
-.su-hero-subtitle {
+.hero-subtitle {
   color: #6b7280;
   margin-bottom: 16px;
 }
 
-.su-hero-cta {
+.hero-cta {
   margin-top: 8px;
 }
 
-.su-hero-image img {
+.hero-image img {
   width: 100%;
   border-radius: 12px;
   object-fit: cover;
 }
 
+/* Hero Image */
+.hero-image-container {
+  display: grid;
+  align-items: middle;
+  padding: 56px 64px 32px;
+  background: lightgray;
+}
+
 /* Intro */
-.su-intro {
+.intro {
   padding: 24px 64px 8px;
   max-width: 900px;
   margin: 0 auto;
@@ -90,33 +116,33 @@
 }
 
 /* Features grid */
-.su-features-grid {
+.features-grid {
   padding: 16px 64px 40px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
 }
 
-.su-card {
+.card {
   background: white;
   border-radius: 10px;
   padding: 18px 20px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
-.su-card h3 {
+.card h3 {
   font-size: 1rem;
   margin-bottom: 8px;
 }
 
 /* Pricing */
-.su-pricing {
+.pricing {
   padding: 32px 64px 56px;
   background: white;
   text-align: center;
 }
 
-.su-billing-toggle {
+.billing-toggle {
   display: inline-flex;
   border-radius: 999px;
   padding: 4px;
@@ -124,7 +150,7 @@
   margin-bottom: 24px;
 }
 
-.su-billing-toggle button {
+.billing-toggle button {
   border: none;
   background: transparent;
   padding: 6px 14px;
@@ -133,11 +159,11 @@
   cursor: pointer;
 }
 
-.su-billing-toggle .active {
+.billing-toggle .active {
   background: white;
 }
 
-.su-pricing-card {
+.pricing-card {
   max-width: 360px;
   margin: 0 auto;
   padding: 24px 24px 28px;
@@ -146,21 +172,21 @@
   color: #f9fafb;
 }
 
-.su-price {
+.price {
   margin-bottom: 12px;
 }
 
-.su-price-amount {
+.price-amount {
   font-size: 2rem;
   font-weight: 700;
 }
 
-.su-price-period {
+.price-period {
   font-size: 0.9rem;
   margin-left: 4px;
 }
 
-.su-price-features {
+.price-features {
   list-style: none;
   padding: 0;
   margin: 16px 0 20px;
@@ -168,7 +194,7 @@
   font-size: 0.9rem;
 }
 
-.su-price-features li {
+.price-features li {
   margin-bottom: 6px;
 }
 
@@ -181,27 +207,23 @@
   margin-bottom: 20px;
 }
 
-.su-footer-content {
-  max-width: 900px;
-  margin: 0 auto;
-}
 
 /* Mobile */
 @media (max-width: 768px) {
-  .su-header {
+  .header {
     padding: 12px 16px;
   }
 
-  .su-hero {
+  .hero {
     grid-template-columns: 1fr;
     padding: 32px 16px;
     gap: 24px;
   }
 
-  .su-intro,
-  .su-features-grid,
-  .su-pricing,
-  .su-footer {
+  .intro,
+  .features-grid,
+  .pricing,
+  .about {
     padding: 16px;
   }
 }

@@ -1,8 +1,8 @@
 // src/App.jsx
 import React, { useState } from "react";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import Home from "./pages/homepage/Home";
+import Login from "./pages/manager_login/Login";
+import Dashboard from "./pages/employee_portal/Dashboard";
 
 function App() {
   const [user, setUser] = useState(null);
