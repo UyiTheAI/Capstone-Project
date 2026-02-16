@@ -1,0 +1,101 @@
+.register-container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  font-family: Arial, sans-serif;
+}
+
+.register-header {
+  background: #f2c037;
+  padding: 20px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.register-card {
+  width: 360px;
+  background: white;
+  padding: 30px;
+  margin: 50px auto;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.register-card h2 {
+  margin-bottom: 5px;
+}
+
+.register-card p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.register-card input,
+.register-card select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.register-card button {
+  width: 100%;
+  padding: 10px;
+  background: #1f3c88;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.register-card button:hover {
+  background: #162f6a;
+}
+
+.terms {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;   /* left align container */
+  margin-bottom: 15px;
+}
+
+.terms label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+
+.divider {
+  margin: 15px 0;
+  color: #888;
+}
+
+.social-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.google {
+  background: white;
+  color: black;
+  border: 1px solid #ccc;
+}
+
+.apple {
+  background: black;
+  color: white;
+}
+
+.signin-link {
+  margin-top: 15px;
+}
+
+.signin-link span {
+  color: blue;
+  cursor: pointer;
+}
