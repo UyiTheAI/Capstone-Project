@@ -34,8 +34,8 @@ const Login = ({ onLogin, onRegisterClick }) => {
         </div>
 
         <div className="portal-links">
-          <button className="portal-btn active">Manager Portal</button>
-          <button className="portal-btn">Employee Portal</button>
+          <button className="portal-btn">Manager Portal</button>
+          <button className="portal-btn active">Employee Portal</button>
           <button className="portal-btn">Owner Portal</button>
         </div>
       </header>

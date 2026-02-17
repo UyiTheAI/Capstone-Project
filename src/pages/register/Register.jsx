@@ -1,29 +1,31 @@
-import{useState} from "react";
+import { useState } from "react";
 import "./Register.css";
 import axios from "axios";
 
 export default function Register({ onLoginClick }) {
-    const [form, setForm] = useState({
-        name: "",
-        email: "",
-        password: "",
-        role: "",
-    });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",      // ✅ added
+    email: "",
+    password: "",
+    role: "",
+  });
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await axios.post("/api/register", form);
-            alert("Registration successful! Please log in.");
-        } catch (error) {
-            alert("Registration failed. Please try again.");
-        }
-    };
-    return (
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post("/api/register", form);
+      alert("Registration successful! Please log in.");
+    } catch (error) {
+      alert("Registration failed. Please try again.");
+    }
+  };
+
+  return (
     <div className="register-container">
 
       <header className="register-header">
@@ -35,10 +37,20 @@ export default function Register({ onLoginClick }) {
         <h2>Get Started Now</h2>
         <p>Enter your credentials to access your account</p>
 
+        {/* ✅ First Name */}
         <input
           type="text"
-          name="name"
-          placeholder="Name"
+          name="firstName"
+          placeholder="First Name"
+          onChange={handleChange}
+          required
+        />
+
+        {/* ✅ Last Name */}
+        <input
+          type="text"
+          name="lastName"
+          placeholder="Last Name"
           onChange={handleChange}
           required
         />
@@ -67,8 +79,10 @@ export default function Register({ onLoginClick }) {
         </select>
 
         <div className="terms">
-            <label><input type="checkbox" required /></label>
-            <label>I agree to the Terms & Policy</label>
+          <label>
+            <input type="checkbox" required />
+          </label>
+          <label>I agree to the Terms & Policy</label>
         </div>
 
         <button type="submit">Signup</button>
@@ -81,10 +95,11 @@ export default function Register({ onLoginClick }) {
         </div>
 
         <p className="signin-link">
-            Have an account? 
-            <span onClick={onLoginClick}> Sign in</span>
+          Have an account?
+          <span onClick={onLoginClick}> Sign in</span>
         </p>
-        </form>
+
+      </form>
 
     </div>
   );

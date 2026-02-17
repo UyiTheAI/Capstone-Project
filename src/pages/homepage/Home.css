@@ -227,3 +227,27 @@
     padding: 16px;
   }
 }
+
+/* Sticky + animated navbar */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* When scrolling down */
+.header.hide {
+  transform: translateY(-100%);
+}
+
+/* When scrolling up */
+.header.show {
+  transform: translateY(0);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+/* Link hover effect */
+.nav a:hover {
+  text-decoration: underline;
+}

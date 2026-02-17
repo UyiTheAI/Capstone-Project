@@ -9,8 +9,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import axios from "axios";
 
-export default function Dashboard({ user, onLogout }) {
-
+export default function Schedule({ user, onLogout, onShiftSwap }) {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
@@ -39,7 +38,7 @@ export default function Dashboard({ user, onLogout }) {
 
         <div className="header-actions">
           <button className="nav-btn active">Schedule</button>
-          <button className="nav-btn">Shift Swap</button>
+          <button className="nav-btn" onClick={onShiftSwap}>Shift Swap</button>
           <button className="nav-btn">Availability</button>
           <Bell size={20} />
           <LogOut size={20} onClick={onLogout} style={{ cursor: "pointer" }} />

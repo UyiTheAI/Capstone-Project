@@ -1,53 +1,52 @@
-// src/App.jsx
 import React, { useState } from "react";
 import Home from "./pages/homepage/Home";
-import Login from "./pages/manager_login/Login";
-import Dashboard from "./pages/employee_portal/Schedule";
-import Register from "./pages/register/Register";
+import Login from "./pages/employee_login/Login";
+import Schedule from "./pages/employee_portal/Schedule";
+import ShiftSwap from "./pages/employee_portal/ShiftSwap";
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState("home"); 
-  // "home" | "login" | "register" | "app"
+  const [view, setView] = useState("home");
 
   const handleLogin = (userData) => {
     setUser(userData);
-    setView("app");
+    setView("schedule");
   };
 
   if (!user && view === "home") {
     return (
       <Home
-        onGetStarted={() => setView("register")}
+        onGetStarted={() => setView("login")}
         onLoginClick={() => setView("login")}
       />
     );
   }
 
   if (!user && view === "login") {
-    return (
-      <Login
-        onLogin={handleLogin}
-        onRegisterClick={() => setView("register")}
-      />
-    );
+    return <Login onLogin={handleLogin} />;
   }
 
-  if (!user && view === "register") {
+  if (view === "shiftSwap") {
     return (
-      <Register
-        onLoginClick={() => setView("login")}
+      <ShiftSwap
+        user={user}
+        onLogout={() => {
+          setUser(null);
+          setView("home");
+        }}
+        onBackToSchedule={() => setView("schedule")}
       />
     );
   }
 
   return (
-    <Dashboard
+    <Schedule
       user={user}
       onLogout={() => {
         setUser(null);
         setView("home");
       }}
+      onShiftSwap={() => setView("shiftSwap")}
     />
   );
 }
