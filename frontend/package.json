@@ -3,18 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-<<<<<<< HEAD
-    "@fullcalendar/daygrid": "^6.1.8",
-    "@fullcalendar/interaction": "^6.1.8",
-    "@fullcalendar/react": "^6.1.8",
-    "@fullcalendar/timegrid": "^6.1.8",
-=======
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
->>>>>>> f9f616b1 (updated project)
     "axios": "^1.4.0",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
@@ -27,10 +20,6 @@
   },
   "proxy": "http://localhost:5000",
   "browserslist": {
-<<<<<<< HEAD
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
-=======
     "production": [
       ">0.2%",
       "not dead",
@@ -41,6 +30,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
->>>>>>> f9f616b1 (updated project)
   }
 }

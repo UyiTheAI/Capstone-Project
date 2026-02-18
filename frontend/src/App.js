@@ -6,10 +6,6 @@ import Register from "./pages/employee_login/Register";
 import EmployeePortal from "./pages/employee_portal/EmployeePortal";
 import ManagerPortal from "./pages/manager_portal/ManagerPortal";
 
-<<<<<<< HEAD
-=======
-
->>>>>>> f9f616b1 (updated project)
 function AppRoutes() {
   const { user, loading } = useAuth();
   const [page, setPage] = React.useState("home");

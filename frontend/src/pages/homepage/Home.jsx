@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../../App.css";
-<<<<<<< HEAD
-=======
 import heroImage from "../../assets/hero-image.jpg";
->>>>>>> f9f616b1 (updated project)
 
 const Home = ({ onGetStarted, onLoginClick }) => {
   const [showHeader, setShowHeader] = useState(true);
@@ -49,44 +46,17 @@ const Home = ({ onGetStarted, onLoginClick }) => {
           </p>
           <button className="su-btn su-btn-yellow mt-4" onClick={onGetStarted}>Get Started →</button>
         </div>
-<<<<<<< HEAD
-        <div style={{ background: "#f5b800", borderRadius: 18, padding: 28 }}>
-          <div style={{ background: "#1a1a1a", borderRadius: 12, padding: 20, color: "#fff" }}>
-            <div className="text-xs text-muted mb-2" style={{ color: "#666" }}>TODAY'S COVERAGE</div>
-            {[["Front", "Maria G."], ["Kitchen", "Kevin C."], ["Bar", "Sarah T."], ["Waitstaff", "John M."]].map(([a, e]) => (
-              <div key={a} className="flex justify-between mt-2 text-sm" style={{ borderBottom: "1px solid #333", paddingBottom: 6 }}>
-                <span style={{ color: "#888" }}>{a}</span><span>{e}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 mt-3">
-            {["⚡ 3 Pending Swaps", "✅ 95% Coverage"].map(t => (
-              <div key={t} style={{ flex: 1, background: "rgba(0,0,0,.15)", borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 700 }}>{t}</div>
-            ))}
-          </div>
-=======
       </section>
 
       <section className="hero-image-container" style={{width: "100%", height: "100vh", overflow: "hidden"}}>
         <div className="hero-image">
           <img src={heroImage} alt="Hero" style={{width: "100%", height: "100%", objectFit: "cover"}} />
->>>>>>> f9f616b1 (updated project)
         </div>
       </section>
 
       {/* FEATURES */}
       <section style={{ padding: "56px 56px" }} id="features">
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 38, marginBottom: 22 }}>EVERYTHING YOU NEED</h2>
-<<<<<<< HEAD
-        <div className="su-g3" style={{ gap: 14 }}>
-          {[
-            ["📅", "Scheduling", "Plan shifts in minutes with intelligent scheduling that respects employee availability, roles, and staffing needs."],
-            ["📊", "Reports & Analytics", "Access coverage and staffing reports instantly with cost breakdowns."],
-            ["🔄", "Shift Swap", "Employees submit swap requests through a guided workflow, keeping changes organized."],
-            ["✅", "Manager Approvals", "Approve or reject swap requests while maintaining full control over coverage."],
-            ["🔔", "Smart Notifications", "Automatic alerts keep managers and staff informed about schedules and changes."],
-            ["📈", "Manager Dashboard", "Monitor hours, coverage, and upcoming shifts at a glance."],
-=======
         <p2 style={{fontSize: 14, color: "#555", maxWidth: 700, marginBottom: 24, lineHeight: 1.7}}>With ShiftUp, experience a seamless flow from scheduling to payday. 
           Manage every shift and hour effortlessly with a system designed to streamline staff scheduling.</p2>
         <div className="su-g3" style={{ gap: 14 }}>
@@ -97,7 +67,6 @@ const Home = ({ onGetStarted, onLoginClick }) => {
             ["✅", "Manager Approvals", "Managers can quickly approve or reject swap requests whilemaintaining full control over coverage."],
             ["🔔", "Smart Notifications", "Automatic alerts keep managers and staff informed about new schedules, changes, and approvals."],
             ["📈", "Manager Dashboard", "A clear dashboard lets managers monitor total hours, coverage, andupcoming shifts at a glance."],
->>>>>>> f9f616b1 (updated project)
           ].map(([icon, title, desc]) => (
             <div key={title} className="su-card">
               <div style={{ fontSize: 26 }}>{icon}</div>
@@ -126,12 +95,6 @@ const Home = ({ onGetStarted, onLoginClick }) => {
       <section style={{ padding: "56px", background: "#fff" }} id="about">
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 38, marginBottom: 14 }}>ABOUT SHIFT-UP</h2>
         <p style={{ color: "#555", fontSize: 14, lineHeight: 1.7, maxWidth: 620, marginBottom: 10 }}>
-<<<<<<< HEAD
-          At ShiftUp, we believe in empowering businesses with smarter, more efficient ways to manage their workforce.
-        </p>
-        <p style={{ color: "#555", fontSize: 14, lineHeight: 1.7, maxWidth: 620 }}>
-          Create and publish schedules in minutes, employees view shifts in real-time, and managers can communicate effectively with their entire team.
-=======
           At ShiftUp, we believe in empowering businesses with smarter, more
           efficient ways to manage their workforce.
         </p>
@@ -139,11 +102,9 @@ const Home = ({ onGetStarted, onLoginClick }) => {
           With ShiftUp, businesses can create and publish schedules in minutes,
           employees can view their shifts in real-time, and managers can
           communicate effectively.
->>>>>>> f9f616b1 (updated project)
         </p>
       </section>
     </div>
   );
 };
-
 export default Home;
