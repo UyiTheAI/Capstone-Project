@@ -34,7 +34,7 @@ const Home = ({ onGetStarted, onLoginClick }) => {
         </nav>
       </header>
 
-      {/* HERO */}
+      {/* Introduction */}
       <section style={{ background: "#1a1a1a", padding: "72px 56px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 36, alignItems: "center" }}>
         <div>
           <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 62, color: "#fff", lineHeight: 1.05 }}>
