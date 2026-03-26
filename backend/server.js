@@ -29,6 +29,7 @@ app.use("/api/swaps",         require("./routes/swaps"));
 app.use("/api/notifications", require("./routes/notifications"));
 app.use("/api/users",         require("./routes/users"));
 app.use("/api/dashboard",     require("./routes/dashboard"));
+app.use("/api/tips",          require("./routes/tips"));
 
 // ── Health Check ───────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
