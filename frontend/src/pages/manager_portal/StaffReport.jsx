@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import api from "../../api";
 import "../../App.css";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function StaffReport() {
   const { t } = useLanguage();
