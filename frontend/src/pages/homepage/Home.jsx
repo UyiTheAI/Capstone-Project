@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../../App.css";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 const Home = ({ onGetStarted, onLoginClick }) => {
   const [showHeader, setShowHeader] = useState(true);

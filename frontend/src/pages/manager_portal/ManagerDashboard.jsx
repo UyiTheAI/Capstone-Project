@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
 import "../../App.css";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "../../context/LanguageContext";
 
-export default function ManagerDashboard({
-  const { t } = useLanguage(); user, onGoToSwaps }) {
+export default function ManagerDashboard({user, onGoToSwaps }) {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 

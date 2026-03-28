@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "../../App.css";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "../../context/LanguageContext";
 
-export default function Register({
-  const { t } = useLanguage(); onLoginClick }) {
+export default function Register({onLoginClick }) {
+  const { t } = useLanguage();
   const { register } = useAuth();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", role: "employee", position: "", availability: "Full-Time" });
   const [error, setError] = useState("");
@@ -98,7 +98,7 @@ export default function Register({
           </div>
 
           <button className="su-btn su-btn-black w-full" onClick={handleSubmit} disabled={loading}>
-            {loading ? <span className="spinner" /> : {t("registerTitle")}}
+            {loading ? <span className="spinner" /> : t("registerTitle")}
           </button>
 
           <p className="text-sm text-center mt-3">

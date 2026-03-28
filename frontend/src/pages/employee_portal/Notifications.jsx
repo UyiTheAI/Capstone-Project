@@ -3,8 +3,8 @@ import api from "../../api";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
 
-export default function Notifications({
-  const { t } = useLanguage(); onRead }) {
+export default function Notifications({onRead }) {
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
