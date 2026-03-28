@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import api from "../../api";
 import "../../App.css";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function StaffReport() {
+  const { t } = useLanguage();
   const [from, setFrom] = useState("2025-09-01");
   const [to, setTo]     = useState("2025-10-31");
   const [report, setReport] = useState(null);

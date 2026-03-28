@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../api";
 import "../../App.css";
+import { useLanguage } from "../context/LanguageContext";
 
 /* ─── constants ─────────────────────────────────────────── */
 const ROLE_COLORS = {
@@ -49,6 +50,7 @@ function fmtHrs(mins) {
 
 /* ─── ShiftModal ─────────────────────────────────────────── */
 function ShiftModal({ emp, date, shift, onSave, onDelete, onClose }) {
+  const { t } = useLanguage();
   const isEdit = !!shift;
   const [preset,  setPreset]  = useState(isEdit ? "Custom" : "Day       9A–5P");
   const [start,   setStart]   = useState(isEdit ? shift.startTime : "09:00");
@@ -83,7 +85,7 @@ function ShiftModal({ emp, date, shift, onSave, onDelete, onClose }) {
         <div style={{ background:"#1a1a1a", padding:"18px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ color:"#f5b800", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1 }}>
-              {isEdit ? "Edit Shift" : "Add Shift"}
+              {isEdit ? {t("editShift")} : {t("addShift")}}
             </div>
             <div style={{ color:"#fff", fontWeight:800, fontSize:15, marginTop:2 }}>
               {emp.name || `${emp.firstName} ${emp.lastName}`}
@@ -203,7 +205,7 @@ function ShiftModal({ emp, date, shift, onSave, onDelete, onClose }) {
               style={{ flex:2, padding:"10px 0", border:"none",
                 background: "#1a1a1a", color:"#f5b800", borderRadius:10, cursor:"pointer",
                 fontWeight:800, fontSize:13, opacity: (!start||!end||!role)?.5:1 }}>
-              {saving ? "Saving…" : isEdit ? "Update Shift" : "Add Shift"}
+              {saving ? {t("loading")} : isEdit ? {t("updateShift")} : {t("addShift")}}
             </button>
           </div>
         </div>
@@ -214,6 +216,7 @@ function ShiftModal({ emp, date, shift, onSave, onDelete, onClose }) {
 
 /* ─── Main Component ─────────────────────────────────────── */
 export default function ManagerSchedule({ user }) {
+  const { t } = useLanguage();
   const [employees,  setEmployees]  = useState([]);
   const [shifts,     setShifts]     = useState([]);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -287,7 +290,7 @@ export default function ManagerSchedule({ user }) {
         timeLabel: `${fmt12(startTime)}–${fmt12(endTime)}`,
         role, area: area||"", isDraft: true,
       });
-      showToast("✓ Shift added as draft");
+      showToast(t("shiftAdded"));
       setModal(null);
       loadData();
     } catch(e) {
@@ -298,7 +301,7 @@ export default function ManagerSchedule({ user }) {
   const handleDeleteShift = async (shiftId) => {
     try {
       await api.delete(`/shifts/${shiftId}`);
-      showToast("Shift removed");
+      showToast(t("shiftRemoved"));
       setModal(null);
       loadData();
     } catch {
@@ -325,7 +328,7 @@ export default function ManagerSchedule({ user }) {
     try {
       const res = await api.get(`/shifts/week?start=${isoDate(prevDays[0])}&end=${isoDate(prevDays[6])}`);
       const prevShifts = res.data.shifts || [];
-      if (!prevShifts.length) { showToast("No shifts found in previous week"); return; }
+      if (!prevShifts.length) { showToast(t("noPrevShifts")); return; }
 
       const calls = prevShifts.map(s => {
         const prevDate = new Date(s.date);
@@ -409,7 +412,7 @@ export default function ManagerSchedule({ user }) {
               padding:"9px 20px", cursor: draftCount>0?"pointer":"not-allowed",
               fontWeight:800, fontSize:13, color:"#fff",
               boxShadow: draftCount>0?"0 2px 8px rgba(34,197,94,.4)":"none" }}>
-            {publishing ? "Publishing…" : draftCount>0 ? `🚀 Publish ${draftCount} Drafts` : "✓ All Published"}
+            {publishing ? {t("publishing")} : draftCount>0 ? `🚀 ${t("publishDrafts")} ${draftCount}` : t("allPublished")}
           </button>
         </div>
       </div>
@@ -417,11 +420,11 @@ export default function ManagerSchedule({ user }) {
       {/* ── STATS STRIP ── */}
       <div style={{ display:"flex", gap:10, marginBottom:18, flexWrap:"wrap" }}>
         {[
-          { label:"Total Shifts",    value: shifts.length,                    color:"#f5b800" },
-          { label:"Published",       value: publishedCount,                   color:"#22c55e" },
-          { label:"Drafts",          value: draftCount,                       color:"#f59e0b" },
-          { label:"Staff Scheduled", value: new Set(shifts.map(s=>String(s.employee?._id||s.employee?.id||s.employee))).size, color:"#818cf8" },
-          { label:"Total Hours",     value: fmtHrs(totalWeekMins),           color:"#38bdf8" },
+          { label:{t("totalShifts")},    value: shifts.length,                    color:"#f5b800" },
+          { label:{t("published")},       value: publishedCount,                   color:"#22c55e" },
+          { label:{t("drafts")},          value: draftCount,                       color:"#f59e0b" },
+          { label:{t("staffScheduled")}, value: new Set(shifts.map(s=>String(s.employee?._id||s.employee?.id||s.employee))).size, color:"#818cf8" },
+          { label:{t("totalHours")},     value: fmtHrs(totalWeekMins),           color:"#38bdf8" },
         ].map(s=>(
           <div key={s.label} style={{ background:"#1a1a1a", borderRadius:12, padding:"12px 18px",
             flex:1, minWidth:110 }}>
@@ -500,7 +503,7 @@ export default function ManagerSchedule({ user }) {
         ) : visibleEmps.length === 0 ? (
           <div style={{ padding:60, textAlign:"center", color:"#aaa" }}>
             <div style={{ fontSize:36, marginBottom:10 }}>👥</div>
-            No employees found. Run <code>node seed.js</code> to load demo data.
+            {t("noData")}
           </div>
         ) : visibleEmps.map((emp, ei) => {
           const empId   = emp._id || emp.id;

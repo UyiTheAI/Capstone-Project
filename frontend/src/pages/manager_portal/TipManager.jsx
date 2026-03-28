@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
 import "../../App.css";
+import { useLanguage } from "../context/LanguageContext";
 
 const fmt = (n) => `$${Number(n).toFixed(2)}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString("en", { weekday:"short", month:"short", day:"numeric", year:"numeric" });
 
 export default function TipManager() {
+  const { t } = useLanguage();
   const [employees, setEmployees]     = useState([]);
   const [tips, setTips]               = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -136,10 +138,10 @@ export default function TipManager() {
       {/* ── STATS STRIP ── */}
       <div style={{ display:"flex", gap:12, marginBottom:20, flexWrap:"wrap" }}>
         {[
-          { icon:"💰", label:"Total Tips Distributed", value: fmt(grandTotal) },
-          { icon:"📋", label:"Tip Records",             value: tips.length },
-          { icon:"👥", label:"Active Employees",        value: employees.length },
-          { icon:"📅", label:"Last Distribution",       value: tips[0] ? fmtDate(tips[0].date) : "—" },
+          { icon:"💰", label:{t("totalTips")}, value: fmt(grandTotal) },
+          { icon:"📋", label:{t("tipRecords")},             value: tips.length },
+          { icon:"👥", label:{t("activeEmployees")},        value: employees.length },
+          { icon:"📅", label:{t("lastDistribution")},       value: tips[0] ? fmtDate(tips[0].date) : "—" },
         ].map((s) => (
           <div key={s.label} style={{ background:"#1a1a1a", borderRadius:12, padding:"14px 20px", flex:1, minWidth:140 }}>
             <div style={{ fontSize:20 }}>{s.icon}</div>
@@ -151,7 +153,7 @@ export default function TipManager() {
 
       {/* ── TABS ── */}
       <div style={{ display:"flex", gap:4, background:"#f0f0ec", borderRadius:10, padding:4, marginBottom:20, width:"fit-content" }}>
-        {[["add","➕ Distribute Tips"], ["history","📜 History"]].map(([key, label]) => (
+        {[["add",{t("addTips")}], ["history",{t("tipHistory")}]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             style={{ padding:"8px 20px", border:"none", borderRadius:8, cursor:"pointer", fontWeight:700, fontSize:13,
               background: tab===key ? "#1a1a1a":"transparent", color: tab===key ? "#fff":"#666" }}>
@@ -187,7 +189,7 @@ export default function TipManager() {
             <div className="su-form-row">
               <label className="su-label">Split Method *</label>
               <div style={{ display:"flex", gap:8 }}>
-                {[["equal","⚖️ Equal Split"], ["manual","✏️ Manual Split"]].map(([val, label]) => (
+                {[["equal",{t("equalSplit")}], ["manual",{t("manualSplit")}]].map(([val, label]) => (
                   <button key={val} onClick={() => setForm({...form, splitMethod:val})}
                     style={{ flex:1, padding:"9px 0", border:"2px solid", borderRadius:10, cursor:"pointer",
                       fontWeight:700, fontSize:12,

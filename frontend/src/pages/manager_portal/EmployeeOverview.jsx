@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
 import "../../App.css";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function EmployeeOverview() {
   const [employees, setEmployees] = useState([]);
