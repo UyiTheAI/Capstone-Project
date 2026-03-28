@@ -13,10 +13,10 @@ const SLOTS = [
 const defaultAvail = () =>
   Object.fromEntries(DAYS.map((d) => [d, { morning: true, afternoon: true, evening: false }]));
 
-export default function Availability({
-  const { t } = useLanguage(); user }) {
+export default function Availability({user }) {
+  const { t } = useLanguage();
   const [avail, setAvail] = useState(defaultAvail());
-  const [availType, setAvailType] = useState(user?.availability || {t("fullTime")});
+  const [availType, setAvailType] = useState(user?.availability || "Full-Time");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState("");
@@ -55,13 +55,13 @@ export default function Availability({
           <div>
             <label className="su-label">Availability Type</label>
             <select className="su-input" style={{ width: "auto", marginTop: 4 }} value={availType} onChange={(e) => setAvailType(e.target.value)}>
-              <option value={t("fullTime")}>Full-Time</option>
-              <option value={t("partTime")}>Part-Time</option>
-              <option value={t("onCall")}>On-Call</option>
+              <option value="Full-Time">{t("fullTime")}</option>
+              <option value="Part-Time">{t("partTime")}</option>
+              <option value="On-Call">{t("onCall")}</option>
             </select>
           </div>
           <button className="su-btn su-btn-yellow su-btn-sm" onClick={handleSave} disabled={loading}>
-            {loading ? <span className="spinner" style={{ borderTopColor: "#1a1a1a" }} /> : saved ? "✓ Saved!" : {t("saveAvailability")}}
+            {loading ? <span className="spinner" style={{ borderTopColor: "#1a1a1a" }} /> : saved ? "✓ Saved!" : t("saveAvailability")}
           </button>
         </div>
 
