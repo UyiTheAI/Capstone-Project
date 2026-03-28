@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../api";
 import "../../App.css";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 /* ─── constants ─────────────────────────────────────────── */
 const ROLE_COLORS = {
@@ -85,7 +85,7 @@ function ShiftModal({ emp, date, shift, onSave, onDelete, onClose }) {
         <div style={{ background:"#1a1a1a", padding:"18px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ color:"#f5b800", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1 }}>
-              {isEdit ? {t("editShift")} : {t("addShift")}}
+              {isEdit ? t("editShift") : t("addShift")}
             </div>
             <div style={{ color:"#fff", fontWeight:800, fontSize:15, marginTop:2 }}>
               {emp.name || `${emp.firstName} ${emp.lastName}`}
@@ -205,7 +205,7 @@ function ShiftModal({ emp, date, shift, onSave, onDelete, onClose }) {
               style={{ flex:2, padding:"10px 0", border:"none",
                 background: "#1a1a1a", color:"#f5b800", borderRadius:10, cursor:"pointer",
                 fontWeight:800, fontSize:13, opacity: (!start||!end||!role)?.5:1 }}>
-              {saving ? {t("loading")} : isEdit ? {t("updateShift")} : {t("addShift")}}
+              {saving ? t("loading") : isEdit ? t("updateShift") : t("addShift")}
             </button>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function ManagerSchedule({ user }) {
               padding:"9px 20px", cursor: draftCount>0?"pointer":"not-allowed",
               fontWeight:800, fontSize:13, color:"#fff",
               boxShadow: draftCount>0?"0 2px 8px rgba(34,197,94,.4)":"none" }}>
-            {publishing ? {t("publishing")} : draftCount>0 ? `🚀 ${t("publishDrafts")} ${draftCount}` : t("allPublished")}
+            {publishing ? t("publishing") : draftCount>0 ? `🚀 $t("publishDrafts") ${draftCount}` : t("allPublished")}
           </button>
         </div>
       </div>
@@ -420,11 +420,11 @@ export default function ManagerSchedule({ user }) {
       {/* ── STATS STRIP ── */}
       <div style={{ display:"flex", gap:10, marginBottom:18, flexWrap:"wrap" }}>
         {[
-          { label:{t("totalShifts")},    value: shifts.length,                    color:"#f5b800" },
-          { label:{t("published")},       value: publishedCount,                   color:"#22c55e" },
-          { label:{t("drafts")},          value: draftCount,                       color:"#f59e0b" },
-          { label:{t("staffScheduled")}, value: new Set(shifts.map(s=>String(s.employee?._id||s.employee?.id||s.employee))).size, color:"#818cf8" },
-          { label:{t("totalHours")},     value: fmtHrs(totalWeekMins),           color:"#38bdf8" },
+          { label:t("totalShifts"),    value: shifts.length,                    color:"#f5b800" },
+          { label:t("published"),       value: publishedCount,                   color:"#22c55e" },
+          { label:t("drafts"),          value: draftCount,                       color:"#f59e0b" },
+          { label:t("staffScheduled"), value: new Set(shifts.map(s=>String(s.employee?._id||s.employee?.id||s.employee))).size, color:"#818cf8" },
+          { label:t("totalHours"),     value: fmtHrs(totalWeekMins),           color:"#38bdf8" },
         ].map(s=>(
           <div key={s.label} style={{ background:"#1a1a1a", borderRadius:12, padding:"12px 18px",
             flex:1, minWidth:110 }}>
@@ -503,7 +503,7 @@ export default function ManagerSchedule({ user }) {
         ) : visibleEmps.length === 0 ? (
           <div style={{ padding:60, textAlign:"center", color:"#aaa" }}>
             <div style={{ fontSize:36, marginBottom:10 }}>👥</div>
-            {t("noData")}
+            t("noData")
           </div>
         ) : visibleEmps.map((emp, ei) => {
           const empId   = emp._id || emp.id;

@@ -202,7 +202,7 @@ export default function ShiftSwap({ user }) {
             </div>
 
             <button className="su-btn su-btn-black su-btn-pill" onClick={handleSubmit} disabled={loading}>
-              {loading ? <span className="spinner" /> : {t("submitRequest")}}
+              {loading ? <span className="spinner" /> : t("submitRequest")}
             </button>
           </div>
         </div>
