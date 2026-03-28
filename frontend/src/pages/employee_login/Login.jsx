@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "../../App.css";
+import { useLanguage } from "../context/LanguageContext";
 
 const Login = ({ onRegisterClick, onHomeClick }) => {
   const { login } = useAuth();
