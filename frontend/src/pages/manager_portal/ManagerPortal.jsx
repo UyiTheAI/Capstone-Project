@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import api from "../../api";
 import "../../App.css";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 import ManagerDashboard  from "./ManagerDashboard";
 import ManagerSchedule   from "./ManagerSchedule";
@@ -11,41 +13,34 @@ import EmployeeOverview  from "./EmployeeOverview";
 import TipManager        from "./TipManager";
 
 function Header({ view, setView, unreadCount, user, onLogout }) {
+  const { t } = useLanguage();
   const isOwner = user?.role === "owner";
 
   const nav = [
-    { key: "managerDash",      label: "Dashboard"         },
-    { key: "managerSchedule",  label: "Schedule"          },
-    { key: "swapApprovals",    label: "My Approvals", badge: unreadCount > 0 },
-    { key: "staffReport",      label: "Staff Reports"     },
-    { key: "employeeOverview", label: "Employee Overview" },
-    ...(isOwner ? [{ key: "tipManager", label: "💰 Tips" }] : []),
+    { key: "managerDash",      label: t("dashboard")        },
+    { key: "managerSchedule",  label: t("schedule")         },
+    { key: "swapApprovals",    label: t("swapApprovals"), badge: unreadCount > 0 },
+    { key: "staffReport",      label: t("staffReports")     },
+    { key: "employeeOverview", label: t("employeeOverview") },
+    ...(isOwner ? [{ key: "tipManager", label: t("tips") }] : []),
   ];
 
   return (
     <header className="su-header">
       <div className="su-brand">
         <div className="su-logobox">UP</div>
-        SHIFT-UP
+        {t("appName")}
       </div>
       <div className="su-nav">
         {nav.map(({ key, label, badge }) => (
-          <button
-            key={key}
-            className={`su-navbtn ${view === key ? "active" : ""}`}
-            onClick={() => setView(key)}
-          >
+          <button key={key} className={`su-navbtn ${view === key ? "active" : ""}`} onClick={() => setView(key)}>
             {badge ? (
-              <span className="su-badge-wrap">
-                {label}
-                <span className="su-badge-dot" />
-              </span>
-            ) : (
-              label
-            )}
+              <span className="su-badge-wrap">{label}<span className="su-badge-dot" /></span>
+            ) : label}
           </button>
         ))}
-        <button className="su-navbtn logout" onClick={onLogout}>Log Out</button>
+        <LanguageSwitcher light />
+        <button className="su-navbtn logout" onClick={onLogout}>{t("logout")}</button>
       </div>
     </header>
   );
@@ -54,19 +49,19 @@ function Header({ view, setView, unreadCount, user, onLogout }) {
 export default function ManagerPortal() {
   const { user, logout } = useAuth();
   const [view, setView]  = useState("managerDash");
-  const [pendingSwapsCount, setPendingSwapsCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const fetchPendingCount = async () => {
     try {
       const res = await api.get("/swaps?status=pending");
-      setPendingSwapsCount(res.data.count || 0);
+      setPendingCount(res.data.count || 0);
     } catch {}
   };
 
   useEffect(() => {
     fetchPendingCount();
-    const interval = setInterval(fetchPendingCount, 30000);
-    return () => clearInterval(interval);
+    const i = setInterval(fetchPendingCount, 30000);
+    return () => clearInterval(i);
   }, []);
 
   const renderView = () => {
@@ -82,14 +77,8 @@ export default function ManagerPortal() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f0ec" }}>
-      <Header
-        view={view}
-        setView={setView}
-        unreadCount={pendingSwapsCount}
-        user={user}
-        onLogout={logout}
-      />
+    <div style={{ minHeight:"100vh", background:"#f0f0ec" }}>
+      <Header view={view} setView={setView} unreadCount={pendingCount} user={user} onLogout={logout} />
       {renderView()}
     </div>
   );
