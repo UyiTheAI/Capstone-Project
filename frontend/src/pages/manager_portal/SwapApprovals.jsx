@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
 import "../../App.css";
+import { useLanguage } from "../context/LanguageContext";
 
-export default function SwapApprovals({ user, onUpdate }) {
+export default function SwapApprovals({
+  const { t } = useLanguage(); user, onUpdate }) {
   const [swaps, setSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState({});
