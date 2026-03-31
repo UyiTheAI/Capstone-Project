@@ -1,7 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
 
-const LANG_CODES = { en: "EN", es: "ES", fr: "FR", pt: "PT", hi: "हि" };
+const LANG_CODES = { en: "EN", es: "ES", fr: "FR", pt: "PT", hi: "हि", ja: "日", zh: "中", mr: "म", ko: "한" };
+
+const LANG_FONTS_MAP = {
+  hi: "'Noto Sans Devanagari', sans-serif",
+  mr: "'Noto Sans Devanagari', sans-serif",
+  ja: "'Noto Sans JP', sans-serif",
+  zh: "'Noto Sans SC', sans-serif",
+  ko: "'Noto Sans KR', sans-serif",
+};
 
 export default function LanguageSwitcher({ light = false }) {
   const { lang, setLang, languages, fontConfig } = useLanguage();
@@ -100,7 +108,7 @@ export default function LanguageSwitcher({ light = false }) {
                 </span>
 
                 {/* Language name — in its own font */}
-                <span style={{ flex: 1, fontFamily: code === "hi" ? "'Noto Sans Devanagari', sans-serif" : "'DM Sans', sans-serif" }}>
+                <span style={{ flex: 1, fontFamily: LANG_FONTS_MAP[code] || "'DM Sans', sans-serif" }}>
                   {data.lang}
                 </span>
 
