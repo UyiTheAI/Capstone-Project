@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 
 const Login = ({ onRegisterClick, onHomeClick }) => {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const [portal, setPortal] = useState("employee");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

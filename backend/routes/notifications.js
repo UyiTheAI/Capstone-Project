@@ -1,81 +1,57 @@
 const express = require("express");
-const router = express.Router();
-const Shift = require("../models/Shift");
-const SwapRequest = require("../models/SwapRequest");
-const User = require("../models/User");
-const { protect, authorize } = require("../middleware/auth");
+const router  = express.Router();
+const Notification = require("../models/Notification");
+const { protect } = require("../middleware/auth");
 
-// ── GET /api/dashboard – Manager dashboard summary
-router.get("/", protect, authorize("manager", "owner"), async (req, res) => {
+// ── GET /api/notifications – Get my notifications
+router.get("/", protect, async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    const notifications = await Notification.find({ recipient: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json({ success: true, notifications });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
-    // Week start/end (Mon–Sun)
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+// ── PUT /api/notifications/read-all – Mark all as read
+router.put("/read-all", protect, async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { recipient: req.user._id, read: false },
+      { read: true }
+    );
+    res.json({ success: true, message: "All notifications marked as read" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
-    // Today's coverage
-    const todayShifts = await Shift.find({
-      date: { $gte: today, $lt: tomorrow },
-    }).populate("employee", "firstName lastName name position");
+// ── PUT /api/notifications/:id/read – Mark one as read
+router.put("/:id/read", protect, async (req, res) => {
+  try {
+    const notif = await Notification.findOneAndUpdate(
+      { _id: req.params.id, recipient: req.user._id },
+      { read: true },
+      { new: true }
+    );
+    if (!notif) return res.status(404).json({ success: false, message: "Notification not found" });
+    res.json({ success: true, notification: notif });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
-    // Pending swap requests
-    const pendingSwaps = await SwapRequest.find({ status: "pending" })
-      .populate("requester", "firstName lastName name")
-      .populate("proposedEmployee", "firstName lastName name")
-      .sort({ createdAt: -1 });
-
-    // Weekly hours
-    const weeklyShifts = await Shift.find({
-      date: { $gte: monday, $lte: sunday },
-      status: { $ne: "no-show" },
-    }).populate("employee", "firstName lastName name");
-
-    // Group by employee
-    const hourlyRate = 10;
-    const hoursMap = {};
-    weeklyShifts.forEach((s) => {
-      const empId = s.employee?._id?.toString();
-      if (!empId) return;
-      if (!hoursMap[empId]) hoursMap[empId] = { name: s.employee.name, hours: 0 };
-      hoursMap[empId].hours += 8; // default 8h per shift
+// ── DELETE /api/notifications/:id – Delete a notification
+router.delete("/:id", protect, async (req, res) => {
+  try {
+    const notif = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      recipient: req.user._id,
     });
-
-    const weeklyHours = Object.values(hoursMap).map((e) => ({
-      ...e,
-      cost: e.hours * hourlyRate,
-    }));
-
-    // Shift alerts: unassigned coverage, no-shows
-    const alerts = [];
-    const noShowShifts = await Shift.find({
-      status: "no-show",
-      date: { $gte: monday, $lte: sunday },
-    }).populate("employee", "name");
-
-    noShowShifts.forEach((s) => {
-      alerts.push({ type: "no-show", text: `No-show detected: ${s.employee?.name} on ${s.date.toDateString()}` });
-    });
-
-    const employeeCount = await User.countDocuments({ role: "employee", isActive: true });
-
-    res.json({
-      success: true,
-      todayShifts,
-      pendingSwaps,
-      weeklyHours,
-      alerts,
-      stats: {
-        employeeCount,
-        pendingSwapsCount: pendingSwaps.length,
-        todayCoverage: todayShifts.length,
-      },
-    });
+    if (!notif) return res.status(404).json({ success: false, message: "Notification not found" });
+    res.json({ success: true, message: "Notification deleted" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
