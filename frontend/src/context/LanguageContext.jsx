@@ -42,6 +42,30 @@ const LANG_FONTS = {
     headFont:  "'Tiro Devanagari Hindi', serif",
     dir:       "ltr",
   },
+  ja: {
+    googleUrl: "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap",
+    bodyFont:  "'Noto Sans JP', sans-serif",
+    headFont:  "'Noto Sans JP', sans-serif",
+    dir:       "ltr",
+  },
+  zh: {
+    googleUrl: "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap",
+    bodyFont:  "'Noto Sans SC', sans-serif",
+    headFont:  "'Noto Sans SC', sans-serif",
+    dir:       "ltr",
+  },
+  mr: {
+    googleUrl: "https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap",
+    bodyFont:  "'Noto Sans Devanagari', sans-serif",
+    headFont:  "'Noto Sans Devanagari', sans-serif",
+    dir:       "ltr",
+  },
+  ko: {
+    googleUrl: "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap",
+    bodyFont:  "'Noto Sans KR', sans-serif",
+    headFont:  "'Noto Sans KR', sans-serif",
+    dir:       "ltr",
+  },
 };
 
 const DEFAULT_FONT = LANG_FONTS.en;
