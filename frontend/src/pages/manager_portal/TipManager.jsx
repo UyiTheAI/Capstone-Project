@@ -112,17 +112,17 @@ export default function TipManager() {
 
   /* ── delete ── */
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this tip record?")) return;
+    if (!window.confirm(t("deleteConfirm"))) return;
     try {
       await api.delete(`/tips/${id}`);
-      setTips((prev) => prev.filter((t) => t._id !== id));
+      setTips((prev) => prev.filter((tip) => tip._id !== id));
     } catch {
       alert("Failed to delete.");
     }
   };
 
   /* ── totals ── */
-  const grandTotal = tips.reduce((s, t) => s + t.totalAmount, 0);
+  const grandTotal = tips.reduce((s, tip) => s + tip.totalAmount, 0);
 
   if (loading) return (
     <div className="su-page" style={{ textAlign:"center", padding:60, color:"#aaa" }}>
@@ -281,26 +281,26 @@ export default function TipManager() {
             </div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-              {tips.map((t) => (
-                <div key={t._id} style={{ background:"#fff", borderRadius:14, padding:"16px 20px",
+              {tips.map((tip) => (
+                <div key={tip._id} style={{ background:"#fff", borderRadius:14, padding:"16px 20px",
                   boxShadow:"0 2px 8px rgba(0,0,0,.05)", borderLeft:"5px solid #f5b800" }}>
 
                   {/* Header row */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
                     <div>
-                      <span style={{ fontWeight:800, fontSize:15 }}>{fmtDate(t.date)}</span>
-                      {t.note && <span style={{ marginLeft:10, color:"#888", fontSize:12 }}>{t.note}</span>}
+                      <span style={{ fontWeight:800, fontSize:15 }}>{fmtDate(tip.date)}</span>
+                      {tip.note && <span style={{ marginLeft:10, color:"#888", fontSize:12 }}>{tip.note}</span>}
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                       <span style={{ background:"#f5b800", color:"#1a1a1a", fontWeight:800,
                         padding:"4px 14px", borderRadius:20, fontSize:14 }}>
-                        {fmt(t.totalAmount)}
+                        {fmt(tip.totalAmount)}
                       </span>
                       <span style={{ background:"#f0f0ec", color:"#888", fontSize:11,
                         padding:"3px 10px", borderRadius:20, fontWeight:600, textTransform:"uppercase" }}>
-                        {t.splitMethod}
+                        {tip.splitMethod}
                       </span>
-                      <button onClick={() => handleDelete(t._id)}
+                      <button onClick={() => handleDelete(tip._id)}
                         style={{ background:"#fee2e2", border:"none", color:"#dc2626",
                           borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12, fontWeight:700 }}>
                         🗑 Delete
@@ -310,7 +310,7 @@ export default function TipManager() {
 
                   {/* Distributions */}
                   <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:12 }}>
-                    {(t.distributions || []).map((d) => {
+                    {(tip.distributions || []).map((d) => {
                       const name = d.employee?.name || `${d.employee?.firstName||""} ${d.employee?.lastName||""}`.trim() || "Employee";
                       return (
                         <div key={d._id || d.employee?._id} style={{
@@ -330,7 +330,7 @@ export default function TipManager() {
                   </div>
 
                   <div style={{ marginTop:8, fontSize:11, color:"#bbb" }}>
-                    Recorded by {t.recordedBy?.name || `${t.recordedBy?.firstName||""} ${t.recordedBy?.lastName||""}`} · {new Date(t.createdAt).toLocaleString()}
+                    Recorded by {tip.recordedBy?.name || `${tip.recordedBy?.firstName||""} ${tip.recordedBy?.lastName||""}`} · {new Date(tip.createdAt).toLocaleString()}
                   </div>
                 </div>
               ))}
