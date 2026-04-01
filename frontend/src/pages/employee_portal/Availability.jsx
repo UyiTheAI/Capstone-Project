@@ -3,11 +3,12 @@ import api from "../../api";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS      = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const DAYS_KEYS = ["availMon","availTue","availWed","availThu","availFri","availSat","availSun"];
 const SLOTS = [
-  { key: "morning",   label: "Morning",   sub: "6am–12pm" },
-  { key: "afternoon", label: "Afternoon", sub: "12pm–6pm" },
-  { key: "evening",   label: "Evening",   sub: "6pm–12am" },
+  { key: "morning",   labelKey: "morning",   subKey: "morningTime" },
+  { key: "afternoon", labelKey: "afternoon", subKey: "afternoonTime" },
+  { key: "evening",   labelKey: "evening",   subKey: "eveningTime" },
 ];
 
 const defaultAvail = () =>
@@ -55,9 +56,9 @@ export default function Availability({user }) {
           <div>
             <label className="su-label">Availability Type</label>
             <select className="su-input" style={{ width: "auto", marginTop: 4 }} value={availType} onChange={(e) => setAvailType(e.target.value)}>
-              <option value="Full-Time">{t("fullTime")}</option>
-              <option value="Part-Time">{t("partTime")}</option>
-              <option value="On-Call">{t("onCall")}</option>
+              <option value={t("fullTimeOpt")}>{t("fullTime")}</option>
+              <option value={t("partTimeOpt")}>{t("partTime")}</option>
+              <option value={t("onCallOpt")}>{t("onCall")}</option>
             </select>
           </div>
           <button className="su-btn su-btn-yellow su-btn-sm" onClick={handleSave} disabled={loading}>
@@ -70,10 +71,10 @@ export default function Availability({user }) {
         <p className="text-sm text-muted mb-4">Check the time slots you are available to work each week.</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, overflowX: "auto" }}>
-          {DAYS.map((day) => (
+          {DAYS.map((day, i) => (
             <div key={day} style={{ background: "#f9f9f7", borderRadius: 10, padding: 12, textAlign: "center", minWidth: 90 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#aaa", marginBottom: 10 }}>{day}</div>
-              {SLOTS.map(({ key, label, sub }) => {
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#aaa", marginBottom: 10 }}>{t(DAYS_KEYS[i])}</div>
+              {SLOTS.map(({ key, labelKey }) => {
                 const checked = avail[day]?.[key] || false;
                 return (
                   <label key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 8, cursor: "pointer" }}>
@@ -89,8 +90,7 @@ export default function Availability({user }) {
                     >
                       {checked && <span style={{ color: "#1a1a1a", fontSize: 16, fontWeight: 700 }}>✓</span>}
                     </div>
-                    <span style={{ fontSize: 9, color: "#aaa", marginTop: 3, textAlign: "center" }}>{label}</span>
-                    <span style={{ fontSize: 8, color: "#ccc" }}>{sub}</span>
+                    <span style={{ fontSize: 9, color: "#aaa", marginTop: 3, textAlign: "center" }}>{t(labelKey)}</span>
                   </label>
                 );
               })}
