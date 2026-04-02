@@ -1,21 +1,16 @@
-const jwt = require("jsonwebtoken");
+const jwt  = require("jsonwebtoken");
 const User = require("../models/User");
 
 // ── Protect: verify JWT token ──────────────────────────────────────────────
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer ")
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
     token = req.headers.authorization.split(" ")[1];
   }
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Not authorized – no token" });
+    return res.status(401).json({ success: false, message: "Not authorized – no token" });
   }
 
   try {
@@ -23,22 +18,16 @@ const protect = async (req, res, next) => {
     req.user = await User.findById(decoded.id).select("-password");
 
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "User no longer exists" });
+      return res.status(401).json({ success: false, message: "User no longer exists" });
     }
 
     if (!req.user.isActive) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Account has been deactivated" });
+      return res.status(401).json({ success: false, message: "Account has been deactivated" });
     }
 
     next();
   } catch (err) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Token invalid or expired" });
+    return res.status(401).json({ success: false, message: "Token invalid or expired" });
   }
 };
 
@@ -55,7 +44,7 @@ const authorize = (...roles) => {
   };
 };
 
-// ── Helper: generate JWT ──────────────────────────────────────────────────
+// ── Generate JWT ──────────────────────────────────────────────────────────
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "7d",

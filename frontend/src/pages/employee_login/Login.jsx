@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
@@ -25,7 +26,7 @@ function GoogleIcon() {
 
 function AppleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 814 1000">
+    <svg width="18" height="18" viewBox="0 0 814 1000" style={{ fill:"currentColor" }}>
       <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105-42.4-150.3-109.3C67.3 786.6 20 707.8 20 632.1 20 478.3 104.7 388 185.4 340.9c47.8-27.5 100.8-41.3 155.2-41.3 63 0 108.7 36.8 165.1 36.8 53.9 0 87.3-36.8 164.6-36.8 37.4 0 131.2 3.8 188.8 41.3zm-97-173.1c29.5-35.6 51-84.2 51-132.9 0-6.4-.6-12.9-1.9-18.7-47.8 2.5-103.5 31.9-137.9 74.6-26.8 32.5-50.6 82.1-50.6 131.4 0 7.1 1.3 14.2 1.9 16.5 3.2.6 8.4 1.3 13.6 1.3 43.7 0 95.5-27.5 123.9-72.2z"/>
     </svg>
   );
@@ -39,116 +40,143 @@ const Divider = ({ label }) => (
   </div>
 );
 
-export default function Register({ onLoginClick }) {
-  const { t }        = useLanguage();
-  const { register } = useAuth();
-  const [form, setForm] = useState({ firstName:"", lastName:"", email:"", password:"", role:"employee", position:"", availability:"Full-Time" });
-  const [error,   setError]   = useState("");
-  const [loading, setLoading] = useState(false);
+const PORTAL_COLORS = { employee:"#4f46e5", manager:"#0891b2", owner:"#f5b800" };
 
-  const update = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+const Login = ({ onHomeClick, onRegisterClick }) => {
+  const { t }                    = useLanguage();
+  const { login, loginWithPopup } = useAuth();
+  const [portal,   setPortal]    = useState("employee");
+  const [email,    setEmail]     = useState("");
+  const [password, setPassword]  = useState("");
+  const [error,    setError]     = useState("");
+  const [loading,  setLoading]   = useState(false);
 
-  const handleSubmit = async () => {
+  const demos = {
+    employee: { email:"maria@shiftup.com",   password:"password123" },
+    manager:  { email:"manager@shiftup.com", password:"password123" },
+    owner:    { email:"owner@shiftup.com",   password:"password123" },
+  };
+
+  const switchPortal = (p) => {
+    setPortal(p);
+    setEmail(demos[p].email);
+    setPassword(demos[p].password);
     setError("");
-    if (!form.firstName || !form.email || !form.password) { setError(t("error")); return; }
-    if (form.password.length < 6) { setError(t("error")); return; }
-    setLoading(true);
-    try { await register(form); }
-    catch (err) { setError(err.response?.data?.message || t("registrationFailed")); }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) { setError(t("error")); return; }
+    setLoading(true); setError("");
+    try { await login(email, password); }
+    catch (err) { setError(err.response?.data?.message || t("invalidCredentials")); }
     finally { setLoading(false); }
   };
 
-  const handleGoogle = () => { window.location.href = `${API}/auth/google`; };
-  const handleApple  = () => { window.location.href = `${API}/auth/apple`; };
+  const handleGoogle = () => loginWithPopup(`${API}/auth/google?role=${portal}`);
+  const handleApple  = () => loginWithPopup(`${API}/auth/apple?role=${portal}`);
+
+  const portalLabels = {
+    employee: t("employeePortal"),
+    manager:  t("managerPortal"),
+    owner:    t("ownerPortal"),
+  };
 
   return (
-    <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)" }}>
+    <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)", position:"relative" }}>
 
-      {/* LEFT */}
-      <div style={{ flex:1, background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 48px" }}>
-        <div className="su-brand" style={{ color:"#f5b800", marginBottom:24 }}>
-          <div className="su-logobox">UP</div>{t("appName")}
-        </div>
-        <h1 style={{ fontFamily:"var(--font-head)", fontSize:54, color:"#f5b800", lineHeight:1, marginBottom:16 }}>{t("registerTitle")}</h1>
-        <p style={{ color:"#999", fontSize:15, lineHeight:1.7 }}>{t("registerSubtitle")}</p>
+      {/* Language switcher */}
+      <div style={{ position:"absolute", top:20, right:24, zIndex:100 }}>
+        <LanguageSwitcher />
       </div>
 
-      {/* RIGHT */}
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7", padding:"40px 24px", overflowY:"auto" }}>
-        <div style={{ width:"100%", maxWidth:420 }}>
-          <h2 style={{ fontFamily:"var(--font-head)", fontSize:32, marginBottom:4 }}>{t("registerTitle")}</h2>
-          <p className="text-sm text-muted" style={{ marginBottom:20 }}>{t("registerSubtitle")}</p>
+      {/* LEFT panel */}
+      <div style={{ flex:1, background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 48px" }}>
+        <div className="su-brand" style={{ color:"#f5b800", marginBottom:20, cursor:"pointer" }} onClick={onHomeClick}>
+          <div className="su-logobox">UP</div>{t("appName")}
+        </div>
+        <h1 style={{ fontFamily:"var(--font-head)", fontSize:52, color:"#f5b800", lineHeight:1 }}>{t("loginTitle")}</h1>
+        <p style={{ color:"#999", marginTop:14, fontSize:15, lineHeight:1.7 }}>{t("loginSubtitle")}</p>
+        <div style={{ marginTop:32, background:"#222", borderRadius:12, padding:18 }}>
+          <div style={{ color:"#666", fontSize:12, marginBottom:10 }}>{t("demoCredentials")}</div>
+          {Object.entries(demos).map(([role, creds]) => (
+            <div key={role} style={{ fontSize:12, color:"#777", marginBottom:4 }}>
+              <span style={{ color:"#555", textTransform:"capitalize" }}>{portalLabels[role]}:</span>{" "}
+              <span style={{ color:"#f5b800" }}>{creds.email}</span>
+              <span style={{ color:"#555" }}> / {creds.password}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* OAuth buttons */}
+      {/* RIGHT panel */}
+      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7" }}>
+        <div style={{ width:"100%", maxWidth:400, padding:36 }}>
+          <h2 style={{ fontFamily:"var(--font-head)", fontSize:34, marginBottom:4 }}>{t("loginTitle")}</h2>
+          <p style={{ color:"#888", fontSize:14, marginBottom:22 }}>{t("loginSubtitle")}</p>
+
+          {/* 1. Pick portal */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>
+              {t("role")}
+            </div>
+            <div style={{ display:"flex", gap:4, background:"#efefec", borderRadius:10, padding:4 }}>
+              {["employee","manager","owner"].map((p) => (
+                <button key={p} onClick={() => switchPortal(p)} style={{
+                  flex:1, padding:"9px 0", border:"none", borderRadius:7, cursor:"pointer",
+                  fontFamily:"var(--font-body)", fontSize:12, fontWeight:700,
+                  background: portal===p ? PORTAL_COLORS[p] : "transparent",
+                  color:      portal===p ? (p==="owner" ? "#1a1a1a" : "#fff") : "#888",
+                  boxShadow:  portal===p ? "0 2px 8px rgba(0,0,0,.15)" : "none",
+                  transition: "all .2s",
+                }}>{portalLabels[p]}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. OAuth buttons — open popup, stay on localhost:3000 */}
           <button style={oauthBtn("#fff","#1a1a1a","#e0e0e0")} onClick={handleGoogle}
-            onMouseOver={e=>e.currentTarget.style.opacity=".85"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-            <GoogleIcon />{t("signUpWithGoogle")}
+            onMouseOver={e=>e.currentTarget.style.opacity=".85"}
+            onMouseOut={e=>e.currentTarget.style.opacity="1"}>
+            <GoogleIcon />{t("continueWithGoogle")}
           </button>
           <button style={oauthBtn("#000","#fff","#000")} onClick={handleApple}
-            onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-            <AppleIcon />{t("signUpWithApple")}
+            onMouseOver={e=>e.currentTarget.style.opacity=".8"}
+            onMouseOut={e=>e.currentTarget.style.opacity="1"}>
+            <AppleIcon />{t("continueWithApple")}
           </button>
 
           <Divider label={t("orContinueWith")} />
 
-          {error && <div className="su-alert-err" style={{ marginBottom:16 }}>{error}</div>}
+          {/* 3. Email + password */}
+          {error && <div className="su-alert-err" style={{ marginBottom:12 }}>{error}</div>}
 
-          {/* Name */}
-          <div style={{ display:"flex", gap:12, marginBottom:14 }}>
-            <div style={{ flex:1 }}>
-              <label className="su-label">{t("firstName")} *</label>
-              <input className="su-input" type="text" placeholder={t("firstName")} value={form.firstName} onChange={update("firstName")} />
-            </div>
-            <div style={{ flex:1 }}>
-              <label className="su-label">{t("lastName")}</label>
-              <input className="su-input" type="text" placeholder={t("lastName")} value={form.lastName} onChange={update("lastName")} />
-            </div>
+          <div className="su-form-row">
+            <label className="su-label">{t("email")}</label>
+            <input className="su-input" type="email" placeholder={t("email")}
+              value={email} onChange={e=>setEmail(e.target.value)} />
+          </div>
+          <div className="su-form-row">
+            <label className="su-label">{t("password")}</label>
+            <input className="su-input" type="password" placeholder={t("password")}
+              value={password} onChange={e=>setPassword(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
           </div>
 
-          <div style={{ marginBottom:14 }}>
-            <label className="su-label">{t("email")} *</label>
-            <input className="su-input" type="email" placeholder="your@email.com" value={form.email} onChange={update("email")} />
-          </div>
-
-          <div style={{ marginBottom:14 }}>
-            <label className="su-label">{t("password")} *</label>
-            <input className="su-input" type="password" placeholder="••••••" value={form.password} onChange={update("password")} />
-          </div>
-
-          <div style={{ display:"flex", gap:12, marginBottom:14 }}>
-            <div style={{ flex:1 }}>
-              <label className="su-label">{t("role")} *</label>
-              <select className="su-input" value={form.role} onChange={update("role")}>
-                <option value="employee">{t("roleEmployee")}</option>
-                <option value="manager">{t("roleManager")}</option>
-                <option value="owner">{t("roleOwner")}</option>
-              </select>
-            </div>
-            <div style={{ flex:1 }}>
-              <label className="su-label">{t("availabilityLabel2")}</label>
-              <select className="su-input" value={form.availability} onChange={update("availability")}>
-                <option value="Full-Time">{t("fullTimeOpt")}</option>
-                <option value="Part-Time">{t("partTimeOpt")}</option>
-                <option value="On-Call">{t("onCallOpt")}</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom:20 }}>
-            <label className="su-label">{t("position")}</label>
-            <input className="su-input" type="text" placeholder={t("positionPlaceholder")} value={form.position} onChange={update("position")} />
-          </div>
-
-          <button className="su-btn su-btn-black w-full" onClick={handleSubmit} disabled={loading} style={{ width:"100%", marginBottom:16 }}>
-            {loading ? <span className="spinner" /> : t("register")}
+          <button className="su-btn su-btn-black w-full" onClick={handleLogin}
+            disabled={loading} style={{ width:"100%", marginTop:4 }}>
+            {loading ? <span className="spinner" /> : t("login")}
           </button>
 
-          <p className="text-sm text-center">
-            {t("haveAccount")}{" "}
-            <span onClick={onLoginClick} style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }}>{t("signIn")}</span>
+          <p style={{ fontSize:13, textAlign:"center", marginTop:16 }}>
+            {t("noAccount")}{" "}
+            <span style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }} onClick={onRegisterClick}>
+              {t("register")}
+            </span>
           </p>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Login;

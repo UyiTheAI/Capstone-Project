@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import api from "../api";
 
 const AuthContext = createContext(null);
@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(() => { try { const s = localStorage.getItem("shiftup_user"); return s ? JSON.parse(s) : null; } catch { return null; } });
   const [loading, setLoading] = useState(true);
+  const popupRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("shiftup_token");
@@ -17,6 +18,26 @@ export function AuthProvider({ children }) {
     } else {
       setLoading(false);
     }
+  }, []);
+
+  // Listen for postMessage from OAuth popup
+  useEffect(() => {
+    const handler = (event) => {
+      // Only accept messages from same origin
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data?.type === "OAUTH_SUCCESS") {
+        const { token, user: userData } = event.data;
+        if (token && userData) {
+          _persist(token, userData);
+        }
+        if (popupRef.current && !popupRef.current.closed) {
+          popupRef.current.close();
+        }
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
   }, []);
 
   const _persist = (token, user) => {
@@ -37,7 +58,20 @@ export function AuthProvider({ children }) {
     return res.data.user;
   };
 
-  // Called by OAuthCallback page after the redirect from backend
+  // Open OAuth in a centered popup — avoids leaving the React app
+  const loginWithPopup = (url) => {
+    const w = 520, h = 620;
+    const left = window.screenX + (window.outerWidth  - w) / 2;
+    const top  = window.screenY + (window.outerHeight - h) / 2;
+    const popup = window.open(
+      url,
+      "shiftup_oauth",
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+    );
+    popupRef.current = popup;
+  };
+
+  // Fallback for OAuthCallback in redirect mode
   const loginWithOAuthData = (token, userData) => {
     _persist(token, userData);
   };
@@ -54,7 +88,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithOAuthData, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithPopup, loginWithOAuthData, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
