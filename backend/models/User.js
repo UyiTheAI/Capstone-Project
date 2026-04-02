@@ -29,9 +29,8 @@ const userSchema = new mongoose.Schema({
 
   // ── OAuth fields ──────────────────────────────────────────────────────────
   googleId:      { type: String, default: null, sparse: true },
-  appleId:       { type: String, default: null, sparse: true },
   avatar:        { type: String, default: null },
-  oauthProvider: { type: String, enum: ["google", "apple", "local", null], default: null },
+  oauthProvider: { type: String, enum: ["google", "local", null], default: null },
 }, { timestamps: true });
 
 // Hash password — skip if OAuth user with no password set
