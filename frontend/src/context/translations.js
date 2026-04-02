@@ -272,8 +272,8 @@ const translations = {
     roleEmployee: "Employee", roleOwner: "Owner", positionPlaceholder: "e.g. Waitstaff, Cook, Bartender...",
     availabilityLabel2: "Availability", registering: "Registering...", loggingIn: "Logging in...",
     invalidCredentials: "Invalid credentials.", registrationFailed: "Registration failed.",
-    continueWithGoogle: "Continue with Google", continueWithApple: "Continue with Apple",
-    signUpWithGoogle: "Sign up with Google", signUpWithApple: "Sign up with Apple", orContinueWith: "or continue with"
+    continueWithGoogle: "Continue with Google",
+    signUpWithGoogle: "Sign up with Google",
   },
 
   /* ══════════════════════════════════════════════════════ SPANISH ══ */
@@ -398,8 +398,8 @@ const translations = {
     roleEmployee: "Empleado", roleOwner: "Propietario", positionPlaceholder: "Mesero, Cocinero...",
     availabilityLabel2: "Disponibilidad", registering: "Registrando...", loggingIn: "Iniciando sesion...",
     invalidCredentials: "Credenciales invalidas.", registrationFailed: "Error en el registro.",
-    continueWithGoogle: "Continuar con Google", continueWithApple: "Continuar con Apple",
-    signUpWithGoogle: "Registrarse con Google", signUpWithApple: "Registrarse con Apple", orContinueWith: "o continuar con"
+    continueWithGoogle: "Continuar con Google",
+    signUpWithGoogle: "Registrarse con Google",
   },
 
   /* ══════════════════════════════════════════════════════ FRENCH ══ */
@@ -529,8 +529,8 @@ const translations = {
     roleEmployee: "Employe", roleOwner: "Proprietaire", positionPlaceholder: "Serveur, Cuisinier...",
     availabilityLabel2: "Disponibilite", registering: "Inscription...", loggingIn: "Connexion...",
     invalidCredentials: "Identifiants invalides.", registrationFailed: "Echec de l inscription.",
-    continueWithGoogle: "Continuer avec Google", continueWithApple: "Continuer avec Apple",
-    signUpWithGoogle: "S inscrire avec Google", signUpWithApple: "S inscrire avec Apple", orContinueWith: "ou continuer avec"
+    continueWithGoogle: "Continuer avec Google",
+    signUpWithGoogle: "S inscrire avec Google",
   },
 
   /* ══════════════════════════════════════════════════════ PORTUGUESE ══ */
@@ -656,8 +656,8 @@ const translations = {
     roleEmployee: "Funcionario", roleOwner: "Proprietario", positionPlaceholder: "Garcom, Cozinheiro...",
     availabilityLabel2: "Disponibilidade", registering: "Registrando...", loggingIn: "Entrando...",
     invalidCredentials: "Credenciais invalidas.", registrationFailed: "Falha no registro.",
-    continueWithGoogle: "Continuar com Google", continueWithApple: "Continuar com Apple",
-    signUpWithGoogle: "Cadastrar com Google", signUpWithApple: "Cadastrar com Apple", orContinueWith: "ou continuar com"
+    continueWithGoogle: "Continuar com Google",
+    signUpWithGoogle: "Cadastrar com Google",
   },
 
   /* ══════════════════════════════════════════════════════ HINDI ══ */
@@ -782,8 +782,8 @@ const translations = {
     roleEmployee: "कर्मचारी", roleOwner: "मालिक", positionPlaceholder: "जैसे वेटर, रसोइया...",
     availabilityLabel2: "उपलब्धता", registering: "पंजीकरण हो रहा है...", loggingIn: "लॉग इन हो रहा है...",
     invalidCredentials: "गलत जानकारी।", registrationFailed: "पंजीकरण विफल।",
-    continueWithGoogle: "Google से जारी रखें", continueWithApple: "Apple से जारी रखें",
-    signUpWithGoogle: "Google से साइन अप करें", signUpWithApple: "Apple से साइन अप करें", orContinueWith: "या इससे जारी रखें"
+    continueWithGoogle: "Google से जारी रखें",
+    signUpWithGoogle: "Google से साइन अप करें",
   },
 
   /* ══════════════════════════════════════════════════════ JAPANESE ══ */
@@ -909,8 +909,8 @@ const translations = {
     roleEmployee: "従業員", roleOwner: "オーナー", positionPlaceholder: "例：ウェイター、コック...",
     availabilityLabel2: "利用可能時間", registering: "登録中...", loggingIn: "ログイン中...",
     invalidCredentials: "認証情報が無効です。", registrationFailed: "登録に失敗しました。",
-    continueWithGoogle: "Googleで続ける", continueWithApple: "Appleで続ける",
-    signUpWithGoogle: "Googleで登録", signUpWithApple: "Appleで登録", orContinueWith: "または"
+    continueWithGoogle: "Googleで続ける",
+    signUpWithGoogle: "Googleで登録",
   },
 
   /* ══════════════════════════════════════════════════════ CHINESE ══ */
@@ -1035,8 +1035,8 @@ const translations = {
     roleEmployee: "员工", roleOwner: "店主", positionPlaceholder: "例如：服务员、厨师...",
     availabilityLabel2: "可用性", registering: "注册中...", loggingIn: "登录中...",
     invalidCredentials: "凭据无效。", registrationFailed: "注册失败。",
-    continueWithGoogle: "使用 Google 继续", continueWithApple: "使用 Apple 继续",
-    signUpWithGoogle: "使用 Google 注册", signUpWithApple: "使用 Apple 注册", orContinueWith: "或使用以下方式"
+    continueWithGoogle: "使用 Google 继续",
+    signUpWithGoogle: "使用 Google 注册",
   },
 
   /* ══════════════════════════════════════════════════════ MARATHI ══ */
@@ -1161,8 +1161,8 @@ const translations = {
     roleEmployee: "कर्मचारी", roleOwner: "मालक", positionPlaceholder: "उदा. वेटर, आचारी...",
     availabilityLabel2: "उपलब्धता", registering: "नोंदणी होत आहे...", loggingIn: "लॉग इन होत आहे...",
     invalidCredentials: "चुकीची माहिती.", registrationFailed: "नोंदणी अयशस्वी.",
-    continueWithGoogle: "Google सह सुरू ठेवा", continueWithApple: "Apple सह सुरू ठेवा",
-    signUpWithGoogle: "Google ने साइन अप करा", signUpWithApple: "Apple ने साइन अप करा", orContinueWith: "किंवा सुरू ठेवा"
+    continueWithGoogle: "Google सह सुरू ठेवा",
+    signUpWithGoogle: "Google ने साइन अप करा",
   },
 
   /* ══════════════════════════════════════════════════════ KOREAN ══ */
@@ -1287,8 +1287,8 @@ const translations = {
     roleEmployee: "직원", roleOwner: "오너", positionPlaceholder: "예: 웨이터, 요리사...",
     availabilityLabel2: "가용성", registering: "등록 중...", loggingIn: "로그인 중...",
     invalidCredentials: "잘못된 자격 증명.", registrationFailed: "등록에 실패했습니다.",
-    continueWithGoogle: "Google로 계속", continueWithApple: "Apple로 계속",
-    signUpWithGoogle: "Google로 가입", signUpWithApple: "Apple로 가입", orContinueWith: "또는"
+    continueWithGoogle: "Google로 계속",
+    signUpWithGoogle: "Google로 가입",
   }
 };
 
