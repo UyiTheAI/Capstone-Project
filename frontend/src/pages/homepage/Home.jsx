@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 const Home = ({ onGetStarted, onLoginClick }) => {
   const { t } = useLanguage();
@@ -50,6 +51,7 @@ const Home = ({ onGetStarted, onLoginClick }) => {
         <nav className="su-nav">
           <a href="#features" className="su-navbtn" style={{ textDecoration: "none", color: "#1a1a1a" }}>{t("featuresTitle")}</a>
           <a href="#pricing"  className="su-navbtn" style={{ textDecoration: "none", color: "#1a1a1a" }}>{t("pricingTitle")}</a>
+          <LanguageSwitcher />
           <button className="su-btn su-btn-outline su-btn-sm" onClick={onLoginClick}>{t("login")}</button>
           <button className="su-btn su-btn-black su-btn-sm"   onClick={onGetStarted}>{t("getStarted")}</button>
         </nav>
