@@ -24,13 +24,6 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 814 1000">
-      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105-42.4-150.3-109.3C67.3 786.6 20 707.8 20 632.1 20 478.3 104.7 388 185.4 340.9c47.8-27.5 100.8-41.3 155.2-41.3 63 0 108.7 36.8 165.1 36.8 53.9 0 87.3-36.8 164.6-36.8 37.4 0 131.2 3.8 188.8 41.3zm-97-173.1c29.5-35.6 51-84.2 51-132.9 0-6.4-.6-12.9-1.9-18.7-47.8 2.5-103.5 31.9-137.9 74.6-26.8 32.5-50.6 82.1-50.6 131.4 0 7.1 1.3 14.2 1.9 16.5 3.2.6 8.4 1.3 13.6 1.3 43.7 0 95.5-27.5 123.9-72.2z"/>
-    </svg>
-  );
-}
 
 const Divider = ({ label }) => (
   <div style={{ display:"flex", alignItems:"center", gap:10, margin:"16px 0" }}>
@@ -86,10 +79,6 @@ export default function Register({ onLoginClick }) {
           <button onClick={handleGoogle} style={oauthBtn("#fff","#1a1a1a","#e0e0e0")}
               onMouseOver={e=>e.currentTarget.style.opacity=".85"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
               <GoogleIcon />{t("signUpWithGoogle")}
-            </button>
-          <button onClick={handleApple} style={oauthBtn("#000","#fff","#000")}
-              onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-              <AppleIcon />{t("signUpWithApple")}
             </button>
 
           <Divider label={t("orContinueWith")} />
