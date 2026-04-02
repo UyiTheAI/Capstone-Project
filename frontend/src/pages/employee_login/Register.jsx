@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
@@ -41,7 +42,7 @@ const Divider = ({ label }) => (
 
 export default function Register({ onLoginClick }) {
   const { t }        = useLanguage();
-  const { register } = useAuth();
+  const { register, loginWithPopup } = useAuth();
   const [form, setForm] = useState({ firstName:"", lastName:"", email:"", password:"", role:"employee", position:"", availability:"Full-Time" });
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,11 +59,13 @@ export default function Register({ onLoginClick }) {
     finally { setLoading(false); }
   };
 
-  const handleGoogle = () => { window.location.href = `${API}/auth/google`; };
-  const handleApple  = () => { window.location.href = `${API}/auth/apple`; };
-
   return (
-    <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)" }}>
+    <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)", position:"relative" }}>
+
+      {/* ── Language switcher — top right ──────────────────────────── */}
+      <div style={{ position:"absolute", top:20, right:24, zIndex:100 }}>
+        <LanguageSwitcher />
+      </div>
 
       {/* LEFT */}
       <div style={{ flex:1, background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 48px" }}>
@@ -80,14 +83,14 @@ export default function Register({ onLoginClick }) {
           <p className="text-sm text-muted" style={{ marginBottom:20 }}>{t("registerSubtitle")}</p>
 
           {/* OAuth buttons */}
-          <button style={oauthBtn("#fff","#1a1a1a","#e0e0e0")} onClick={handleGoogle}
-            onMouseOver={e=>e.currentTarget.style.opacity=".85"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-            <GoogleIcon />{t("signUpWithGoogle")}
-          </button>
-          <button style={oauthBtn("#000","#fff","#000")} onClick={handleApple}
-            onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-            <AppleIcon />{t("signUpWithApple")}
-          </button>
+          <button onClick={handleGoogle} style={oauthBtn("#fff","#1a1a1a","#e0e0e0")}
+              onMouseOver={e=>e.currentTarget.style.opacity=".85"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
+              <GoogleIcon />{t("signUpWithGoogle")}
+            </button>
+          <button onClick={handleApple} style={oauthBtn("#000","#fff","#000")}
+              onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
+              <AppleIcon />{t("signUpWithApple")}
+            </button>
 
           <Divider label={t("orContinueWith")} />
 
