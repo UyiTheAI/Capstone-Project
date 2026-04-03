@@ -3,20 +3,20 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { useLanguage } from "./context/LanguageContext";
 
-import Home               from "./pages/homepage/Home";
-import Pricing            from "./pages/homepage/Pricing";
-import GetStartedModal    from "./pages/homepage/GetStartedModal";
-import Login              from "./pages/employee_login/Login";
-import Register           from "./pages/employee_login/Register";
-import ForgotPassword     from "./pages/employee_login/ForgotPassword";
-import ResetPassword      from "./pages/employee_login/ResetPassword";
-import OAuthCallback      from "./pages/employee_login/OAuthCallback";
-import EmployeePortal     from "./pages/employee_portal/EmployeePortal";
-import ManagerPortal      from "./pages/manager_portal/ManagerPortal";
-import SubscriptionPage   from "./pages/subscription/SubscriptionPage";
-import PaymentPage        from "./pages/payment/PaymentPage";
+import Home             from "./pages/homepage/Home";
+import Pricing          from "./pages/homepage/Pricing";
+import GetStartedModal  from "./pages/homepage/GetStartedModal";
+import Login            from "./pages/employee_login/Login";
+import Register         from "./pages/employee_login/Register";
+import ForgotPassword   from "./pages/employee_login/ForgotPassword";
+import ResetPassword    from "./pages/employee_login/ResetPassword";
+import OAuthCallback    from "./pages/employee_login/OAuthCallback";
+import EmployeePortal   from "./pages/employee_portal/EmployeePortal";
+import ManagerPortal    from "./pages/manager_portal/ManagerPortal";
+import SubscriptionPage from "./pages/subscription/SubscriptionPage";
+import PaymentPage      from "./pages/payment/PaymentPage";
 import { SubscriptionSuccess, SubscriptionCancel } from "./pages/subscription/SubscriptionRedirects";
-import TrialPrompt        from "./components/TrialPrompt";
+import TrialPrompt      from "./components/TrialPrompt";
 
 function AppRoutes() {
   const { user, loading, showTrial, dismissTrial } = useAuth();
@@ -32,6 +32,8 @@ function AppRoutes() {
     if (path === "/subscription/cancel")    return "subCancel";
     if (path === "/forgot-password")        return "forgotPassword";
     if (path.startsWith("/reset-password")) return "resetPassword";
+    if (path === "/register")               return "register";
+    if (path === "/login")                  return "login";
     return "home";
   };
 
@@ -40,57 +42,77 @@ function AppRoutes() {
 
   const nav = (p) => {
     setPage(p);
-    window.history.pushState({}, "", p === "home" ? "/" : `/${p}`);
+    const url = p === "home" ? "/" : `/${p}`;
+    window.history.pushState({}, "", url);
   };
 
   if (loading) {
     return (
       <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#f0f0ec" }}>
-        <div style={{ fontFamily:"'DM Sans', sans-serif", color:"#888" }}>{t("loading")}</div>
+        <div style={{ fontFamily:"'DM Sans', sans-serif", color:"#888", fontSize:16 }}>{t("loading") || "Loading…"}</div>
       </div>
     );
   }
 
-  // ── Special pages ──────────────────────────────────────────────────────────
+  // ── No-auth pages ──────────────────────────────────────────────────────────
   if (page === "oauthCallback")  return <OAuthCallback />;
   if (page === "subSuccess")     return <SubscriptionSuccess />;
   if (page === "subCancel")      return <SubscriptionCancel />;
   if (page === "forgotPassword") return <ForgotPassword onBack={() => nav("login")} />;
   if (page === "resetPassword")  return <ResetPassword />;
 
-  // ── Payment page — needs auth ──────────────────────────────────────────────
+  // ── Payment page ───────────────────────────────────────────────────────────
   if (page === "payment") {
+    // Must be logged in to access payment
     if (!user) {
-      // Not logged in — show get started modal over home
       return (
         <>
-          <Home onGetStarted={() => {}} onLoginClick={() => nav("login")} onPricingClick={() => nav("pricing")} />
-          <GetStartedModal
-            onClose={() => nav("home")}
-            onAlreadyHaveAccount={() => nav("login")}
-            onProceedToPayment={() => {
-              // After registration token is set — reload user then show payment
-              window.location.reload();
-            }}
+          <Home
+            onGetStarted={() => setShowGetStarted(true)}
+            onLoginClick={() => nav("login")}
+            onPricingClick={() => nav("pricing")}
           />
+          {showGetStarted && (
+            <GetStartedModal
+              onClose={() => { setShowGetStarted(false); nav("home"); }}
+              onAlreadyHaveAccount={() => { setShowGetStarted(false); nav("login"); }}
+              onProceedToPayment={() => { setShowGetStarted(false); nav("payment"); }}
+            />
+          )}
         </>
       );
     }
-    return <PaymentPage onBack={() => nav("subscription")} onSuccess={() => nav("subscription")} />;
+    return (
+      <PaymentPage
+        onBack={() => nav("home")}
+        onGoToLogin={() => {
+          nav("login");
+        }}
+      />
+    );
   }
 
   // ── Authenticated ──────────────────────────────────────────────────────────
   if (user) {
     return (
       <>
+        {/* Auto trial prompt for owner/manager without subscription */}
         {showTrial && (
           <TrialPrompt
             onClose={dismissTrial}
             onStartTrial={() => { dismissTrial(); nav("payment"); }}
           />
         )}
-        {page === "subscription" && <SubscriptionPage onStartTrial={() => nav("payment")} />}
-        {page === "pricing"      && <Pricing onGetStarted={() => nav("payment")} onLoginClick={() => nav("login")} />}
+
+        {page === "subscription" && (
+          <SubscriptionPage onStartTrial={() => nav("payment")} />
+        )}
+        {page === "pricing" && (
+          <Pricing
+            onGetStarted={() => nav("payment")}
+            onLoginClick={() => nav("login")}
+          />
+        )}
         {page !== "subscription" && page !== "pricing" && (
           user.role === "manager" || user.role === "owner"
             ? <ManagerPortal onSubscription={() => nav("subscription")} />
@@ -100,9 +122,10 @@ function AppRoutes() {
     );
   }
 
-  // ── Public ─────────────────────────────────────────────────────────────────
+  // ── Public (not logged in) ─────────────────────────────────────────────────
   return (
     <>
+      {/* Get Started modal */}
       {showGetStarted && (
         <GetStartedModal
           onClose={() => setShowGetStarted(false)}
@@ -113,10 +136,27 @@ function AppRoutes() {
           }}
         />
       )}
-      {page === "login"    && <Login    onRegisterClick={() => nav("register")} onHomeClick={() => nav("home")} onForgotPassword={() => nav("forgotPassword")} />}
-      {page === "register" && <Register onLoginClick={() => nav("login")} onHomeClick={() => nav("home")} />}
-      {page === "pricing"  && <Pricing  onGetStarted={() => setShowGetStarted(true)} onLoginClick={() => nav("login")} />}
-      {page === "home"     && (
+
+      {page === "login" && (
+        <Login
+          onRegisterClick={() => nav("register")}
+          onHomeClick={() => nav("home")}
+          onForgotPassword={() => nav("forgotPassword")}
+        />
+      )}
+      {page === "register" && (
+        <Register
+          onLoginClick={() => nav("login")}
+          onHomeClick={() => nav("home")}
+        />
+      )}
+      {page === "pricing" && (
+        <Pricing
+          onGetStarted={() => setShowGetStarted(true)}
+          onLoginClick={() => nav("login")}
+        />
+      )}
+      {page === "home" && (
         <Home
           onGetStarted={() => setShowGetStarted(true)}
           onLoginClick={() => nav("login")}
