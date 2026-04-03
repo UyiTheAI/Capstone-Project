@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [showTrial, setShowTrial] = useState(false);
   const popupRef = useRef(null);
 
+  // Verify token on mount
   useEffect(() => {
     const token = localStorage.getItem("shiftup_token");
     if (token) {
@@ -22,7 +23,7 @@ export function AuthProvider({ children }) {
     } else { setLoading(false); }
   }, []);
 
-  // Show trial prompt once per session for owner/manager with no subscription
+  // Show trial prompt once per session for owner/manager without subscription
   const _checkTrial = (u) => {
     if (!u) return;
     if (!["owner","manager"].includes(u.role)) return;
@@ -30,9 +31,10 @@ export function AuthProvider({ children }) {
     const key = `shiftup_trial_shown_${u.id || u._id}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
-    setTimeout(() => setShowTrial(true), 800); // slight delay after login
+    setTimeout(() => setShowTrial(true), 1000);
   };
 
+  // Listen for postMessage from OAuth popup
   useEffect(() => {
     const handler = (event) => {
       if (event.origin !== window.location.origin) return;
@@ -48,7 +50,7 @@ export function AuthProvider({ children }) {
 
   const _persist = (token, userData) => {
     localStorage.setItem("shiftup_token", token);
-    localStorage.setItem("shiftup_user", JSON.stringify(userData));
+    localStorage.setItem("shiftup_user",  JSON.stringify(userData));
     setUser(userData);
   };
 
@@ -68,15 +70,29 @@ export function AuthProvider({ children }) {
 
   const loginWithPopup = (url) => {
     const w = 520, h = 620;
-    const left = window.screenX + (window.outerWidth - w) / 2;
+    const left = window.screenX + (window.outerWidth  - w) / 2;
     const top  = window.screenY + (window.outerHeight - h) / 2;
     popupRef.current = window.open(url, "shiftup_oauth",
       `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no`);
   };
 
-  const loginWithOAuthData = (token, userData) => { _persist(token, userData); _checkTrial(userData); };
-  const logout       = () => { localStorage.removeItem("shiftup_token"); localStorage.removeItem("shiftup_user"); setUser(null); setShowTrial(false); };
-  const updateUser   = (u) => { setUser(u); localStorage.setItem("shiftup_user", JSON.stringify(u)); };
+  const loginWithOAuthData = (token, userData) => {
+    _persist(token, userData);
+    _checkTrial(userData);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("shiftup_token");
+    localStorage.removeItem("shiftup_user");
+    setUser(null);
+    setShowTrial(false);
+  };
+
+  const updateUser = (u) => {
+    setUser(u);
+    localStorage.setItem("shiftup_user", JSON.stringify(u));
+  };
+
   const dismissTrial = () => setShowTrial(false);
 
   return (
