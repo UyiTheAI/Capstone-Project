@@ -100,16 +100,48 @@ const Home = ({ onGetStarted, onLoginClick }) => {
       </section>
 
       {/* PRICING */}
-      <section style={{ background: "#1a1a1a", padding: "56px", textAlign: "center" }} id="pricing">
-        <h2 style={{ fontFamily: "var(--font-head)", fontSize: 38, color: "#fff", marginBottom: 22 }}>{t("pricingTitle")}</h2>
-        <div style={{ background: "#f5b800", borderRadius: 18, padding: "30px 32px", maxWidth: 300, margin: "0 auto" }}>
-          <div style={{ fontFamily: "var(--font-head)", fontSize: 52 }}>$5<span style={{ fontSize: 18 }}>{t("perMonth")}</span></div>
-          <ul style={{ listStyle: "none", margin: "18px 0", textAlign: "left" }}>
-            {pricingItems.map((item) => (
-              <li key={item} style={{ padding: "5px 0", fontSize: 13, borderBottom: "1px solid rgba(0,0,0,.1)" }}>✓ {item}</li>
-            ))}
-          </ul>
-          <button className="su-btn su-btn-black w-full" onClick={onGetStarted}>{t("getStarted")}</button>
+      <section style={{ background: "#1a1a1a", padding: "72px 40px", textAlign: "center" }} id="pricing">
+        <h2 style={{ fontFamily: "var(--font-head)", fontSize: 48, color: "#fff", marginBottom: 8 }}>{t("pricingTitle")}</h2>
+        <p style={{ color: "#888", fontSize: 16, marginBottom: 48 }}>Start free for 7 days. Then just $5 CAD/month.</p>
+
+        <div style={{ maxWidth: 420, margin: "0 auto" }}>
+          {/* Trial banner */}
+          <div style={{ background: "linear-gradient(135deg,#f5b800,#ffdd57)", borderRadius: "16px 16px 0 0", padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontWeight: 900, fontSize: 15, color: "#1a1a1a" }}>🎁 7-Day Free Trial</div>
+              <div style={{ fontSize: 12, color: "#1a1a1a", opacity: .7 }}>No charge until trial ends · Cancel anytime</div>
+            </div>
+            <div style={{ fontFamily: "var(--font-head)", fontSize: 24, color: "#1a1a1a", fontWeight: 900 }}>FREE</div>
+          </div>
+
+          {/* Card */}
+          <div style={{ background: "#222", borderRadius: "0 0 20px 20px", padding: "28px 32px", border: "2px solid #f5b800", borderTop: "none" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 6, marginBottom: 24 }}>
+              <span style={{ fontFamily: "var(--font-head)", fontSize: 64, color: "#f5b800", lineHeight: 1 }}>$5</span>
+              <div style={{ paddingBottom: 8, textAlign: "left" }}>
+                <div style={{ color: "#f5b800", fontSize: 13, fontWeight: 700 }}>CAD</div>
+                <div style={{ color: "#666", fontSize: 12 }}>{t("perMonth")} after trial</div>
+              </div>
+            </div>
+
+            <ul style={{ listStyle: "none", margin: "0 0 24px", textAlign: "left", padding: 0 }}>
+              {pricingItems.map((item) => (
+                <li key={item} style={{ padding: "8px 0", fontSize: 14, borderBottom: "1px solid #333", color: "#ccc", display: "flex", gap: 10, alignItems: "center" }}>
+                  <span style={{ color: "#f5b800", fontWeight: 900 }}>✓</span> {item}
+                </li>
+              ))}
+            </ul>
+
+            <button
+              className="su-btn su-btn-yellow w-full"
+              onClick={onGetStarted}
+              style={{ width: "100%", padding: "14px", fontSize: 15, fontWeight: 800, background: "#f5b800", color: "#1a1a1a", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: "var(--font-body)" }}
+            >
+              🚀 Start Free Trial → No Credit Card Required
+            </button>
+
+            <div style={{ fontSize: 11, color: "#555", marginTop: 10 }}>🔒 Powered by Stripe · Cancel anytime</div>
+          </div>
         </div>
       </section>
 
