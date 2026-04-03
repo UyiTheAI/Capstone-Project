@@ -23,7 +23,6 @@ const PORTAL_COLORS = { employee:"#4f46e5", manager:"#0891b2", owner:"#f5b800" }
 export default function Register({ onHomeClick, onLoginClick }) {
   const { t }                        = useLanguage();
   const { register, loginWithPopup } = useAuth();
-
   const [role,         setRole]         = useState("employee");
   const [firstName,    setFirstName]    = useState("");
   const [lastName,     setLastName]     = useState("");
@@ -32,36 +31,40 @@ export default function Register({ onHomeClick, onLoginClick }) {
   const [position,     setPosition]     = useState("");
   const [availability, setAvailability] = useState("Full-Time");
   const [orgCode,      setOrgCode]      = useState("");
-  const [codeStatus,   setCodeStatus]   = useState(null); // null | "valid" | "invalid"
+  const [codeStatus,   setCodeStatus]   = useState(null);
   const [error,        setError]        = useState("");
   const [loading,      setLoading]      = useState(false);
 
   const handleGoogle = () => loginWithPopup(`${API_URL}/auth/google?role=${role}`);
 
-  // Verify org code on blur
   const verifyCode = async () => {
     if (!orgCode || role === "owner") return;
     try {
       await api.post("/subscription/verify-code", { code: orgCode });
       setCodeStatus("valid");
-    } catch {
-      setCodeStatus("invalid");
-    }
+    } catch { setCodeStatus("invalid"); }
   };
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password) { setError("All fields are required."); return; }
-    if (role !== "owner" && !orgCode) { setError("Organisation code is required."); return; }
+    if (role !== "owner" && !orgCode) { setError("Organisation code is required for employees and managers."); return; }
     if (role !== "owner" && codeStatus === "invalid") { setError("Invalid organisation code."); return; }
     setLoading(true); setError("");
     try {
-      await register({ firstName, lastName, email, password, role, position, availability, orgCode: role !== "owner" ? orgCode : undefined });
+      await register({
+        firstName, lastName, email, password, role, position, availability,
+        orgCode: role !== "owner" ? orgCode : undefined,
+      });
     } catch (err) {
-      setError(err.response?.data?.message || t("registrationFailed"));
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally { setLoading(false); }
   };
 
-  const portalLabels = { employee: t("employeePortal"), manager: t("managerPortal"), owner: t("ownerPortal") };
+  const portalLabels = {
+    employee: t("employeePortal") || "Employee",
+    manager:  t("managerPortal")  || "Manager",
+    owner:    t("ownerPortal")    || "Owner",
+  };
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)", position:"relative" }}>
@@ -70,15 +73,21 @@ export default function Register({ onHomeClick, onLoginClick }) {
       {/* LEFT */}
       <div style={{ flex:"0 0 360px", background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 40px" }}>
         <div className="su-brand" style={{ color:"#f5b800", marginBottom:20, cursor:"pointer" }} onClick={onHomeClick}>
-          <div className="su-logobox">UP</div>{t("appName")}
+          <div className="su-logobox">UP</div>{t("appName") || "SHIFT-UP"}
         </div>
-        <h1 style={{ fontFamily:"var(--font-head)", fontSize:48, color:"#f5b800", lineHeight:1 }}>{t("registerTitle")}</h1>
-        <p style={{ color:"#999", marginTop:14, fontSize:14, lineHeight:1.7 }}>{t("registerSubtitle")}</p>
-        {role === "owner" && (
-          <div style={{ marginTop:24, background:"#f5b800", borderRadius:12, padding:16 }}>
-            <div style={{ fontWeight:800, fontSize:13, color:"#1a1a1a" }}>👑 Owner Registration</div>
+        <h1 style={{ fontFamily:"var(--font-head)", fontSize:48, color:"#f5b800", lineHeight:1 }}>Create Account</h1>
+        <p style={{ color:"#999", marginTop:14, fontSize:14, lineHeight:1.7 }}>
+          {role === "owner"
+            ? "Register as owner and subscribe to get your org code."
+            : role === "manager"
+            ? "Managers need an org code from their restaurant owner."
+            : "Employees need an org code from their manager or owner."}
+        </p>
+        {role !== "owner" && (
+          <div style={{ marginTop:20, background:"#f5b800", borderRadius:12, padding:16 }}>
+            <div style={{ fontWeight:800, fontSize:13, color:"#1a1a1a" }}>Need an org code?</div>
             <div style={{ fontSize:12, color:"#1a1a1a", marginTop:4, opacity:.8 }}>
-              After subscribing, you'll receive a 6-digit code to share with your team.
+              Ask your restaurant owner or manager for the 6-digit code.
             </div>
           </div>
         )}
@@ -87,14 +96,14 @@ export default function Register({ onHomeClick, onLoginClick }) {
       {/* RIGHT */}
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7", overflowY:"auto", padding:"40px 24px" }}>
         <div style={{ width:"100%", maxWidth:440 }}>
-          <h2 style={{ fontFamily:"var(--font-head)", fontSize:32, marginBottom:20 }}>{t("registerTitle")}</h2>
+          <h2 style={{ fontFamily:"var(--font-head)", fontSize:32, marginBottom:20 }}>Register</h2>
 
           {/* Portal picker */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>{t("role")}</div>
+            <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>I am a</div>
             <div style={{ display:"flex", gap:4, background:"#efefec", borderRadius:10, padding:4 }}>
               {["employee","manager","owner"].map(p => (
-                <button key={p} onClick={() => { setRole(p); setOrgCode(""); setCodeStatus(null); }} style={{
+                <button key={p} onClick={() => { setRole(p); setOrgCode(""); setCodeStatus(null); setError(""); }} style={{
                   flex:1, padding:"9px 0", border:"none", borderRadius:7, cursor:"pointer",
                   fontFamily:"var(--font-body)", fontSize:12, fontWeight:700,
                   background: role===p ? PORTAL_COLORS[p] : "transparent",
@@ -105,25 +114,25 @@ export default function Register({ onHomeClick, onLoginClick }) {
             </div>
           </div>
 
-          {/* Google button */}
+          {/* Google */}
           <button onClick={handleGoogle} style={{
             width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
             padding:"12px 16px", border:"1.5px solid #e0e0e0", borderRadius:10, cursor:"pointer",
             background:"#fff", fontFamily:"var(--font-body)", fontSize:14, fontWeight:600,
             marginBottom:16, transition:"opacity .15s",
           }} onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-            <GoogleIcon /> {t("signUpWithGoogle")}
+            <GoogleIcon /> Sign up with Google
           </button>
 
           <div style={{ display:"flex", alignItems:"center", gap:10, margin:"0 0 16px" }}>
             <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
-            <span style={{ fontSize:12, color:"#aaa" }}>{t("orContinueWith")}</span>
+            <span style={{ fontSize:12, color:"#aaa" }}>or</span>
             <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
           </div>
 
-          {error && <div className="su-alert-err" style={{ marginBottom:12 }}>{error}</div>}
+          {error && <div style={{ padding:"10px 14px", background:"#fee2e2", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:12 }}>{error}</div>}
 
-          {/* Org Code — only for non-owners */}
+          {/* Org code for non-owners */}
           {role !== "owner" && (
             <div className="su-form-row" style={{ marginBottom:16 }}>
               <label className="su-label" style={{ display:"flex", justifyContent:"space-between" }}>
@@ -133,56 +142,61 @@ export default function Register({ onHomeClick, onLoginClick }) {
               </label>
               <input
                 className="su-input"
-                placeholder="Enter 6-digit code from your manager"
+                placeholder="Enter 6-digit code"
                 maxLength={6}
                 value={orgCode}
-                onChange={e => { setOrgCode(e.target.value); setCodeStatus(null); }}
+                onChange={e => { setOrgCode(e.target.value.replace(/\D/g,"")); setCodeStatus(null); }}
                 onBlur={verifyCode}
-                style={{ borderColor: codeStatus === "valid" ? "#16a34a" : codeStatus === "invalid" ? "#dc2626" : undefined, letterSpacing:4, fontSize:18, textAlign:"center" }}
+                style={{
+                  letterSpacing: 6, fontSize: 20, textAlign:"center",
+                  borderColor: codeStatus === "valid" ? "#16a34a" : codeStatus === "invalid" ? "#dc2626" : undefined,
+                }}
               />
-              <div style={{ fontSize:11, color:"#aaa", marginTop:4 }}>Ask your restaurant owner or manager for this code.</div>
+              <div style={{ fontSize:11, color:"#aaa", marginTop:4 }}>
+                Get this code from your restaurant owner or manager.
+              </div>
             </div>
           )}
 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <div className="su-form-row">
-              <label className="su-label">{t("firstName")}</label>
-              <input className="su-input" value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder={t("firstName")} />
+              <label className="su-label">First Name</label>
+              <input className="su-input" value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="First name" />
             </div>
             <div className="su-form-row">
-              <label className="su-label">{t("lastName")}</label>
-              <input className="su-input" value={lastName} onChange={e=>setLastName(e.target.value)} placeholder={t("lastName")} />
+              <label className="su-label">Last Name</label>
+              <input className="su-input" value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="Last name" />
             </div>
           </div>
 
           <div className="su-form-row">
-            <label className="su-label">{t("email")}</label>
-            <input className="su-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder={t("email")} />
+            <label className="su-label">Email</label>
+            <input className="su-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" />
           </div>
           <div className="su-form-row">
-            <label className="su-label">{t("password")}</label>
-            <input className="su-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={t("password")} />
+            <label className="su-label">Password</label>
+            <input className="su-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min 6 characters" />
           </div>
           <div className="su-form-row">
-            <label className="su-label">{t("position")}</label>
-            <input className="su-input" value={position} onChange={e=>setPosition(e.target.value)} placeholder={t("positionPlaceholder")} />
+            <label className="su-label">Position (optional)</label>
+            <input className="su-input" value={position} onChange={e=>setPosition(e.target.value)} placeholder="e.g. Waitstaff, Cook" />
           </div>
           <div className="su-form-row">
-            <label className="su-label">{t("availability")}</label>
+            <label className="su-label">Availability</label>
             <select className="su-input" value={availability} onChange={e=>setAvailability(e.target.value)}>
-              <option value="Full-Time">{t("fullTimeOpt")}</option>
-              <option value="Part-Time">{t("partTimeOpt")}</option>
-              <option value="On-Call">{t("onCallOpt")}</option>
+              <option value="Full-Time">Full-Time</option>
+              <option value="Part-Time">Part-Time</option>
+              <option value="On-Call">On-Call</option>
             </select>
           </div>
 
           <button className="su-btn su-btn-black" onClick={handleRegister} disabled={loading} style={{ width:"100%", marginTop:8 }}>
-            {loading ? <span className="spinner" /> : t("register")}
+            {loading ? <span className="spinner" /> : "Create Account"}
           </button>
 
           <p style={{ fontSize:13, textAlign:"center", marginTop:16 }}>
-            {t("haveAccount")}{" "}
-            <span style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }} onClick={onLoginClick}>{t("login")}</span>
+            Already have an account?{" "}
+            <span style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }} onClick={onLoginClick}>Login</span>
           </p>
         </div>
       </div>
