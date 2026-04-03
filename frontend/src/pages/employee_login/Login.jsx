@@ -19,14 +19,14 @@ function GoogleIcon() {
 
 const PORTAL_COLORS = { employee:"#4f46e5", manager:"#0891b2", owner:"#f5b800" };
 
-export default function Login({ onHomeClick, onRegisterClick }) {
-  const { t }                      = useLanguage();
-  const { login, loginWithPopup }  = useAuth();
-  const [portal,   setPortal]      = useState("employee");
-  const [email,    setEmail]       = useState("");
-  const [password, setPassword]    = useState("");
-  const [error,    setError]       = useState("");
-  const [loading,  setLoading]     = useState(false);
+export default function Login({ onHomeClick, onRegisterClick, onForgotPassword }) {
+  const { t }                     = useLanguage();
+  const { login, loginWithPopup } = useAuth();
+  const [portal,   setPortal]     = useState("employee");
+  const [email,    setEmail]      = useState("");
+  const [password, setPassword]   = useState("");
+  const [error,    setError]      = useState("");
+  const [loading,  setLoading]    = useState(false);
 
   const demos = {
     employee: { email:"maria@shiftup.com",   password:"password123" },
@@ -34,12 +34,7 @@ export default function Login({ onHomeClick, onRegisterClick }) {
     owner:    { email:"owner@shiftup.com",   password:"password123" },
   };
 
-  const switchPortal = (p) => {
-    setPortal(p);
-    setEmail(demos[p].email);
-    setPassword(demos[p].password);
-    setError("");
-  };
+  const switchPortal = (p) => { setPortal(p); setEmail(demos[p].email); setPassword(demos[p].password); setError(""); };
 
   const handleLogin = async () => {
     if (!email || !password) { setError(t("error")); return; }
@@ -49,18 +44,12 @@ export default function Login({ onHomeClick, onRegisterClick }) {
     finally { setLoading(false); }
   };
 
-  const handleGoogle = () => {
-    loginWithPopup(`${API}/auth/google?role=${portal}`);
-  };
-
+  const handleGoogle = () => loginWithPopup(`${API}/auth/google?role=${portal}`);
   const portalLabels = { employee: t("employeePortal"), manager: t("managerPortal"), owner: t("ownerPortal") };
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)", position:"relative" }}>
-
-      <div style={{ position:"absolute", top:20, right:24, zIndex:100 }}>
-        <LanguageSwitcher />
-      </div>
+      <div style={{ position:"absolute", top:20, right:24, zIndex:100 }}><LanguageSwitcher /></div>
 
       {/* LEFT */}
       <div style={{ flex:1, background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 48px" }}>
@@ -87,7 +76,7 @@ export default function Login({ onHomeClick, onRegisterClick }) {
           <h2 style={{ fontFamily:"var(--font-head)", fontSize:34, marginBottom:4 }}>{t("loginTitle")}</h2>
           <p style={{ color:"#888", fontSize:14, marginBottom:22 }}>{t("loginSubtitle")}</p>
 
-          {/* Portal selector */}
+          {/* Portal tabs */}
           <div style={{ marginBottom:20 }}>
             <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>{t("role")}</div>
             <div style={{ display:"flex", gap:4, background:"#efefec", borderRadius:10, padding:4 }}>
@@ -103,19 +92,16 @@ export default function Login({ onHomeClick, onRegisterClick }) {
             </div>
           </div>
 
-          {/* Google button */}
+          {/* Google */}
           <button onClick={handleGoogle} style={{
             width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
             padding:"12px 16px", border:"1.5px solid #e0e0e0", borderRadius:10, cursor:"pointer",
-            background:"#fff", color:"#1a1a1a", fontFamily:"var(--font-body)", fontSize:14,
-            fontWeight:600, marginBottom:16, transition:"opacity .15s",
-          }}
-            onMouseOver={e=>e.currentTarget.style.opacity=".8"}
-            onMouseOut={e=>e.currentTarget.style.opacity="1"}>
+            background:"#fff", fontFamily:"var(--font-body)", fontSize:14, fontWeight:600,
+            marginBottom:16, transition:"opacity .15s",
+          }} onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
             <GoogleIcon /> {t("continueWithGoogle")}
           </button>
 
-          {/* Divider */}
           <div style={{ display:"flex", alignItems:"center", gap:10, margin:"0 0 16px" }}>
             <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
             <span style={{ fontSize:12, color:"#aaa" }}>{t("orContinueWith")}</span>
@@ -129,7 +115,12 @@ export default function Login({ onHomeClick, onRegisterClick }) {
             <input className="su-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder={t("email")} />
           </div>
           <div className="su-form-row">
-            <label className="su-label">{t("password")}</label>
+            <label className="su-label" style={{ display:"flex", justifyContent:"space-between" }}>
+              <span>{t("password")}</span>
+              <span onClick={onForgotPassword} style={{ color:"#f5b800", cursor:"pointer", fontSize:12, fontWeight:600 }}>
+                {t("forgotPassword")}
+              </span>
+            </label>
             <input className="su-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder={t("password")} />
           </div>
 
