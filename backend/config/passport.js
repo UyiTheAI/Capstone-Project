@@ -14,14 +14,21 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       const firstName = profile.name?.givenName  || "User";
       const lastName  = profile.name?.familyName || "";
       const avatar    = profile.photos?.[0]?.value;
-      const role      = ["employee","manager","owner"].includes(req.query?.role)
-                        ? req.query.role : "employee";
+      const role      = ["employee","manager","owner"].includes(req.query?.role) ? req.query.role : "employee";
+
       if (!email) return done(new Error("No email from Google"), null);
+
       let user = await User.findOne({ email });
       if (user) {
         if (!user.googleId) { user.googleId = profile.id; if (avatar) user.avatar = avatar; await user.save(); }
       } else {
-        user = await User.create({ firstName, lastName, email, googleId: profile.id, avatar, role, availability: "Full-Time", password: Math.random().toString(36) + Date.now(), oauthProvider: "google" });
+        user = await User.create({
+          firstName, lastName, email,
+          googleId: profile.id, avatar, role,
+          availability:  "Full-Time",
+          password:      Math.random().toString(36) + Date.now().toString(36),
+          oauthProvider: "google",
+        });
       }
       return done(null, user);
     } catch (err) { return done(err, null); }
