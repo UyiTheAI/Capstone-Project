@@ -19,6 +19,7 @@ const rc       = (r) => ROLE_COLORS[r] || { bg:"#6b7280", light:"#f3f4f6" };
 const DAY_T_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
 const AREA_EN  = ["Front","Bar","Kitchen","Patio","Drive-Thru","Back","Counter"];
 const AREA_KEYS= ["areaFront","areaBar","areaKitchen","areaPatio","areaDriveThru","areaBack","areaCounter"];
+const AREAS    = AREA_EN; // alias used in ShiftModal
 const PRESET_TIMES = [
   { label:"Morning   6A–2P", labelKey:"morningShift",  start:"06:00", end:"14:00" },
   { label:"Day       9A–5P",  start:"09:00", end:"17:00" },
