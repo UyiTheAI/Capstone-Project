@@ -34,18 +34,28 @@ export default function Login({ onHomeClick, onRegisterClick, onForgotPassword }
     owner:    { email:"owner@shiftup.com",   password:"password123" },
   };
 
-  const switchPortal = (p) => { setPortal(p); setEmail(demos[p].email); setPassword(demos[p].password); setError(""); };
+  const switchPortal = (p) => {
+    setPortal(p);
+    setEmail(demos[p].email);
+    setPassword(demos[p].password);
+    setError("");
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) { setError(t("error")); return; }
+    if (!email || !password) { setError(t("error") || "Please fill all fields"); return; }
     setLoading(true); setError("");
     try { await login(email, password); }
-    catch (err) { setError(err.response?.data?.message || t("invalidCredentials")); }
+    catch (err) { setError(err.response?.data?.message || "Invalid email or password"); }
     finally { setLoading(false); }
   };
 
   const handleGoogle = () => loginWithPopup(`${API}/auth/google?role=${portal}`);
-  const portalLabels = { employee: t("employeePortal"), manager: t("managerPortal"), owner: t("ownerPortal") };
+
+  const portalLabels = {
+    employee: t("employeePortal") || "Employee",
+    manager:  t("managerPortal")  || "Manager",
+    owner:    t("ownerPortal")    || "Owner",
+  };
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)", position:"relative" }}>
@@ -54,12 +64,12 @@ export default function Login({ onHomeClick, onRegisterClick, onForgotPassword }
       {/* LEFT */}
       <div style={{ flex:1, background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 48px" }}>
         <div className="su-brand" style={{ color:"#f5b800", marginBottom:20, cursor:"pointer" }} onClick={onHomeClick}>
-          <div className="su-logobox">UP</div>{t("appName")}
+          <div className="su-logobox">UP</div>{t("appName") || "SHIFT-UP"}
         </div>
-        <h1 style={{ fontFamily:"var(--font-head)", fontSize:52, color:"#f5b800", lineHeight:1 }}>{t("loginTitle")}</h1>
-        <p style={{ color:"#999", marginTop:14, fontSize:15 }}>{t("loginSubtitle")}</p>
+        <h1 style={{ fontFamily:"var(--font-head)", fontSize:52, color:"#f5b800", lineHeight:1 }}>{t("loginTitle") || "Welcome Back"}</h1>
+        <p style={{ color:"#999", marginTop:14, fontSize:15 }}>{t("loginSubtitle") || "Log in to your portal"}</p>
         <div style={{ marginTop:32, background:"#222", borderRadius:12, padding:18 }}>
-          <div style={{ color:"#666", fontSize:12, marginBottom:10 }}>{t("demoCredentials")}</div>
+          <div style={{ color:"#666", fontSize:12, marginBottom:10 }}>Demo Credentials</div>
           {Object.entries(demos).map(([role, creds]) => (
             <div key={role} style={{ fontSize:12, color:"#777", marginBottom:4 }}>
               <span style={{ color:"#555", textTransform:"capitalize" }}>{portalLabels[role]}:</span>{" "}
@@ -73,12 +83,14 @@ export default function Login({ onHomeClick, onRegisterClick, onForgotPassword }
       {/* RIGHT */}
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7" }}>
         <div style={{ width:"100%", maxWidth:400, padding:36 }}>
-          <h2 style={{ fontFamily:"var(--font-head)", fontSize:34, marginBottom:4 }}>{t("loginTitle")}</h2>
-          <p style={{ color:"#888", fontSize:14, marginBottom:22 }}>{t("loginSubtitle")}</p>
+          <h2 style={{ fontFamily:"var(--font-head)", fontSize:34, marginBottom:4 }}>{t("loginTitle") || "Login"}</h2>
+          <p style={{ color:"#888", fontSize:14, marginBottom:22 }}>{t("loginSubtitle") || "Select your portal and sign in"}</p>
 
           {/* Portal tabs */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>{t("role")}</div>
+            <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>
+              Select Portal
+            </div>
             <div style={{ display:"flex", gap:4, background:"#efefec", borderRadius:10, padding:4 }}>
               {["employee","manager","owner"].map(p => (
                 <button key={p} onClick={() => switchPortal(p)} style={{
@@ -92,45 +104,43 @@ export default function Login({ onHomeClick, onRegisterClick, onForgotPassword }
             </div>
           </div>
 
-          {/* Google */}
+          {/* Google button */}
           <button onClick={handleGoogle} style={{
             width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
             padding:"12px 16px", border:"1.5px solid #e0e0e0", borderRadius:10, cursor:"pointer",
             background:"#fff", fontFamily:"var(--font-body)", fontSize:14, fontWeight:600,
             marginBottom:16, transition:"opacity .15s",
           }} onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
-            <GoogleIcon /> {t("continueWithGoogle")}
+            <GoogleIcon /> Sign in with Google
           </button>
 
           <div style={{ display:"flex", alignItems:"center", gap:10, margin:"0 0 16px" }}>
             <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
-            <span style={{ fontSize:12, color:"#aaa" }}>{t("orContinueWith")}</span>
+            <span style={{ fontSize:12, color:"#aaa" }}>or</span>
             <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
           </div>
 
-          {error && <div className="su-alert-err" style={{ marginBottom:12 }}>{error}</div>}
+          {error && <div style={{ padding:"10px 14px", background:"#fee2e2", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:12 }}>{error}</div>}
 
           <div className="su-form-row">
-            <label className="su-label">{t("email")}</label>
-            <input className="su-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder={t("email")} />
+            <label className="su-label">Email</label>
+            <input className="su-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" />
           </div>
           <div className="su-form-row">
             <label className="su-label" style={{ display:"flex", justifyContent:"space-between" }}>
-              <span>{t("password")}</span>
-              <span onClick={onForgotPassword} style={{ color:"#f5b800", cursor:"pointer", fontSize:12, fontWeight:600 }}>
-                {t("forgotPassword")}
-              </span>
+              <span>Password</span>
+              <span onClick={onForgotPassword} style={{ color:"#f5b800", cursor:"pointer", fontSize:12, fontWeight:600 }}>Forgot password?</span>
             </label>
-            <input className="su-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder={t("password")} />
+            <input className="su-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder="Password" />
           </div>
 
           <button className="su-btn su-btn-black" onClick={handleLogin} disabled={loading} style={{ width:"100%", marginTop:4 }}>
-            {loading ? <span className="spinner" /> : t("login")}
+            {loading ? <span className="spinner" /> : "Login"}
           </button>
 
           <p style={{ fontSize:13, textAlign:"center", marginTop:16 }}>
-            {t("noAccount")}{" "}
-            <span style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }} onClick={onRegisterClick}>{t("register")}</span>
+            No account?{" "}
+            <span style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }} onClick={onRegisterClick}>Register</span>
           </p>
         </div>
       </div>
