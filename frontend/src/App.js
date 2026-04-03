@@ -24,14 +24,14 @@ function AppRoutes() {
 
   const getInitialPage = () => {
     const path = window.location.pathname;
-    if (path === "/oauth/callback")          return "oauthCallback";
-    if (path === "/pricing")                 return "pricing";
-    if (path === "/payment")                 return "payment";
-    if (path === "/subscription")            return "subscription";
-    if (path === "/subscription/success")    return "subSuccess";
-    if (path === "/subscription/cancel")     return "subCancel";
-    if (path === "/forgot-password")         return "forgotPassword";
-    if (path.startsWith("/reset-password"))  return "resetPassword";
+    if (path === "/oauth/callback")         return "oauthCallback";
+    if (path === "/pricing")                return "pricing";
+    if (path === "/payment")                return "payment";
+    if (path === "/subscription")           return "subscription";
+    if (path === "/subscription/success")   return "subSuccess";
+    if (path === "/subscription/cancel")    return "subCancel";
+    if (path === "/forgot-password")        return "forgotPassword";
+    if (path.startsWith("/reset-password")) return "resetPassword";
     return "home";
   };
 
@@ -51,15 +51,31 @@ function AppRoutes() {
     );
   }
 
-  // ── Special pages (no auth needed) ────────────────────────────────────────
+  // ── Special pages ──────────────────────────────────────────────────────────
   if (page === "oauthCallback")  return <OAuthCallback />;
   if (page === "subSuccess")     return <SubscriptionSuccess />;
   if (page === "subCancel")      return <SubscriptionCancel />;
   if (page === "forgotPassword") return <ForgotPassword onBack={() => nav("login")} />;
   if (page === "resetPassword")  return <ResetPassword />;
 
-  // ── Payment page — accessible when logged in ───────────────────────────────
-  if (page === "payment" && user) {
+  // ── Payment page — needs auth ──────────────────────────────────────────────
+  if (page === "payment") {
+    if (!user) {
+      // Not logged in — show get started modal over home
+      return (
+        <>
+          <Home onGetStarted={() => {}} onLoginClick={() => nav("login")} onPricingClick={() => nav("pricing")} />
+          <GetStartedModal
+            onClose={() => nav("home")}
+            onAlreadyHaveAccount={() => nav("login")}
+            onProceedToPayment={() => {
+              // After registration token is set — reload user then show payment
+              window.location.reload();
+            }}
+          />
+        </>
+      );
+    }
     return <PaymentPage onBack={() => nav("subscription")} onSuccess={() => nav("subscription")} />;
   }
 
@@ -67,7 +83,12 @@ function AppRoutes() {
   if (user) {
     return (
       <>
-        {showTrial && <TrialPrompt onClose={dismissTrial} onStartTrial={() => { dismissTrial(); nav("payment"); }} />}
+        {showTrial && (
+          <TrialPrompt
+            onClose={dismissTrial}
+            onStartTrial={() => { dismissTrial(); nav("payment"); }}
+          />
+        )}
         {page === "subscription" && <SubscriptionPage onStartTrial={() => nav("payment")} />}
         {page === "pricing"      && <Pricing onGetStarted={() => nav("payment")} onLoginClick={() => nav("login")} />}
         {page !== "subscription" && page !== "pricing" && (
@@ -86,13 +107,15 @@ function AppRoutes() {
         <GetStartedModal
           onClose={() => setShowGetStarted(false)}
           onAlreadyHaveAccount={() => { setShowGetStarted(false); nav("login"); }}
-          onProceedToPayment={() => { setShowGetStarted(false); nav("payment"); }}
+          onProceedToPayment={() => {
+            setShowGetStarted(false);
+            nav("payment");
+          }}
         />
       )}
       {page === "login"    && <Login    onRegisterClick={() => nav("register")} onHomeClick={() => nav("home")} onForgotPassword={() => nav("forgotPassword")} />}
       {page === "register" && <Register onLoginClick={() => nav("login")} onHomeClick={() => nav("home")} />}
       {page === "pricing"  && <Pricing  onGetStarted={() => setShowGetStarted(true)} onLoginClick={() => nav("login")} />}
-      {page === "payment"  && <Login    onRegisterClick={() => nav("register")} onHomeClick={() => nav("home")} onForgotPassword={() => nav("forgotPassword")} />}
       {page === "home"     && (
         <Home
           onGetStarted={() => setShowGetStarted(true)}
