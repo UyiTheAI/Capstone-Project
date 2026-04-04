@@ -3,27 +3,31 @@ import api from "../../api";
 
 const PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "";
 
+/**
+ * PaymentPage — Complete payment FIRST, then register owner in DB.
+ * No user created until payment is confirmed.
+ */
 export default function PaymentPage({ onBack, onGoToLogin }) {
   const [stripe,       setStripe]       = React.useState(null);
   const [clientSecret, setClientSecret] = React.useState("");
+  const [customerId,   setCustomerId]   = React.useState("");
   const [step,         setStep]         = React.useState("loading");
   const [error,        setError]        = React.useState("");
   const [userEmail,    setUserEmail]    = React.useState("");
   const elementsRef = React.useRef(null);
   const mounted     = React.useRef(false);
 
-  // Get pending owner data from localStorage
   const getPendingOwner = () => {
     try { return JSON.parse(localStorage.getItem("shiftup_pending_owner") || "null"); }
     catch { return null; }
   };
 
   React.useEffect(() => {
-    const pending = getPendingOwner();
-    if (pending?.email) setUserEmail(pending.email);
+    const p = getPendingOwner();
+    if (p?.email) setUserEmail(p.email);
   }, []);
 
-  // Load Stripe.js once
+  // Load Stripe.js
   React.useEffect(() => {
     if (!PUBLISHABLE_KEY) { setError("REACT_APP_STRIPE_PUBLISHABLE_KEY not set."); setStep("error"); return; }
     if (window.Stripe)    { setStripe(window.Stripe(PUBLISHABLE_KEY)); return; }
@@ -36,50 +40,35 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
     document.head.appendChild(s);
   }, []);
 
-  // Step 1: Register owner → get token → create Stripe intent
+  // Create Stripe intent WITHOUT registering user
   React.useEffect(() => {
     if (!stripe) return;
-
     const pending = getPendingOwner();
-    if (!pending) {
+    if (!pending?.email) {
       setError("No account info found. Please go back and fill in your details.");
       setStep("error");
       return;
     }
 
-    const setup = async () => {
-      try {
-        // 1. Register owner in DB
-        const regRes = await api.post("/auth/register", pending);
-        const token  = regRes.data.token;
-        // Store token temporarily for the intent call
-        localStorage.setItem("shiftup_token", token);
-        localStorage.setItem("shiftup_user",  JSON.stringify(regRes.data.user));
-
-        // 2. Create Stripe subscription intent
-        const intentRes = await api.post("/subscription/create-intent");
-        if (intentRes.data.clientSecret) {
-          setClientSecret(intentRes.data.clientSecret);
-        } else {
-          setError("Failed to initialize payment.");
-          setStep("error");
-        }
-      } catch (err) {
-        const msg = err.response?.data?.message || "Setup failed.";
-        // If already registered (e.g. user pressed back), try login instead
-        if (msg.toLowerCase().includes("already registered")) {
-          setError("This email is already registered. Please sign in instead.");
-        } else {
-          setError(msg);
-        }
+    // Use PUBLIC endpoint — no auth required, no DB user created
+    api.post("/subscription/create-intent-public", {
+      email:     pending.email,
+      firstName: pending.firstName,
+      lastName:  pending.lastName,
+    })
+    .then(res => {
+      if (res.data.clientSecret) {
+        setClientSecret(res.data.clientSecret);
+        setCustomerId(res.data.customerId);
+      } else {
+        setError("Failed to initialize payment.");
         setStep("error");
-        // Clear bad token
-        localStorage.removeItem("shiftup_token");
-        localStorage.removeItem("shiftup_user");
       }
-    };
-
-    setup();
+    })
+    .catch(err => {
+      setError(err.response?.data?.message || "Setup failed. Please try again.");
+      setStep("error");
+    });
   }, [stripe]);
 
   // Mount Stripe Elements
@@ -105,6 +94,7 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
     if (!stripe || !elementsRef.current || step !== "ready") return;
     setStep("processing"); setError("");
 
+    // Confirm payment with Stripe
     const { error: stripeError } = await stripe.confirmPayment({
       elements:      elementsRef.current,
       confirmParams: { return_url: window.location.origin },
@@ -113,16 +103,21 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
 
     if (stripeError) { setError(stripeError.message); setStep("ready"); return; }
 
+    // ✅ Payment confirmed — NOW register owner in DB
+    const pending = getPendingOwner();
     try {
-      // Activate subscription
-      await api.post("/subscription/activate");
-      // Clear pending data and token — user must log in fresh
+      await api.post("/subscription/register-and-activate", {
+        firstName:  pending.firstName,
+        lastName:   pending.lastName,
+        email:      pending.email,
+        password:   pending.password,
+        customerId,
+      });
+      // Clear pending data
       localStorage.removeItem("shiftup_pending_owner");
-      localStorage.removeItem("shiftup_token");
-      localStorage.removeItem("shiftup_user");
       setStep("success");
     } catch (err) {
-      setError(err.response?.data?.message || "Activation failed.");
+      setError(err.response?.data?.message || "Account creation failed. Please contact support.");
       setStep("ready");
     }
   };
@@ -135,10 +130,10 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
         <h2 style={{ fontFamily:"var(--font-head)", fontSize:36, marginBottom:8 }}>Account Created!</h2>
         <p style={{ color:"#555", marginBottom:20, lineHeight:1.7 }}>
           Payment successful! Your account has been created and your 7-day free trial has started.
-          {userEmail && <><br/>A confirmation email has been sent to <strong>{userEmail}</strong>.</>}
+          {userEmail && <><br/>Confirmation sent to <strong>{userEmail}</strong>.</>}
         </p>
         <div style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:12, padding:"14px 18px", marginBottom:24, fontSize:14, color:"#166534" }}>
-          ✅ You can now log in and start using SHIFT-UP. Use the email and password you just entered.
+          ✅ You can now log in using the email and password you entered.
         </div>
         <button onClick={() => onGoToLogin?.()} style={{ width:"100%", padding:14, background:"#f5b800", color:"#1a1a1a", border:"none", borderRadius:12, fontWeight:800, fontSize:16, cursor:"pointer", fontFamily:"var(--font-body)" }}>
           Go to Login →
@@ -153,12 +148,16 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ width:"100%", maxWidth:520 }}>
 
-        {/* Steps header */}
-        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:24, maxWidth:300, margin:"0 auto 24px" }}>
-          {[{ n:"1", label:"Info", done:true }, { n:"2", label:"Payment", active:true }, { n:"3", label:"Done!", active:false }].map((s, i) => (
+        {/* Steps */}
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:24, maxWidth:320, margin:"0 auto 24px" }}>
+          {[
+            { n:"1", label:"Your Info", done:true },
+            { n:"2", label:"Payment",   active:true },
+            { n:"3", label:"Account Created", active:false },
+          ].map((s, i) => (
             <React.Fragment key={s.n}>
               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                <div style={{ width:28, height:28, borderRadius:"50%", background: s.done ? "#16a34a" : s.active ? "#f5b800" : "#e5e5e5", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:13, color: s.done || s.active ? "#1a1a1a" : "#aaa" }}>
+                <div style={{ width:28, height:28, borderRadius:"50%", background: s.done ? "#16a34a" : s.active ? "#f5b800" : "#e5e5e5", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:13, color: (s.done || s.active) ? "#1a1a1a" : "#aaa" }}>
                   {s.done ? "✓" : s.n}
                 </div>
                 <span style={{ fontSize:12, fontWeight: s.active ? 700 : 400, color: s.active ? "#1a1a1a" : "#aaa" }}>{s.label}</span>
@@ -171,7 +170,7 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
         <div style={{ textAlign:"center", marginBottom:20 }}>
           <div style={{ fontFamily:"var(--font-head)", fontSize:18, color:"#f5b800", letterSpacing:2, marginBottom:4 }}>SHIFT-UP</div>
           <h1 style={{ fontFamily:"var(--font-head)", fontSize:40, color:"#1a1a1a", margin:0 }}>Complete Payment</h1>
-          <p style={{ color:"#888", marginTop:6 }}>7 days free · Then $5 CAD/month · Cancel anytime</p>
+          <p style={{ color:"#888", marginTop:6 }}>Your account is created <strong>after</strong> payment confirms</p>
         </div>
 
         <div style={{ background:"#fff", borderRadius:20, padding:"32px 28px", boxShadow:"0 8px 40px rgba(0,0,0,.08)" }}>
@@ -179,16 +178,14 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
           <div style={{ background:"#f0fdf4", border:"1.5px solid #86efac", borderRadius:12, padding:"14px 18px", marginBottom:20, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
               <div style={{ fontWeight:800, fontSize:15, color:"#166534" }}>🎁 7-Day Free Trial</div>
-              <div style={{ fontSize:12, color:"#166534", opacity:.8 }}>
-                No charge until {new Date(Date.now() + 7*24*60*60*1000).toLocaleDateString()}
-              </div>
+              <div style={{ fontSize:12, color:"#166534", opacity:.8 }}>No charge until {new Date(Date.now() + 7*24*60*60*1000).toLocaleDateString()}</div>
             </div>
             <div style={{ fontFamily:"var(--font-head)", fontSize:32, color:"#16a34a" }}>FREE</div>
           </div>
 
           {userEmail && (
             <div style={{ background:"#f9f9f7", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:"#888" }}>
-              Creating account for: <strong style={{ color:"#1a1a1a" }}>{userEmail}</strong>
+              Account will be created for: <strong style={{ color:"#1a1a1a" }}>{userEmail}</strong>
             </div>
           )}
 
@@ -199,7 +196,7 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
               <div style={{ height:100, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7", borderRadius:12, border:"1px dashed #ddd" }}>
                 <div style={{ textAlign:"center" }}>
                   <div style={{ width:28, height:28, border:"3px solid #f5b800", borderTopColor:"transparent", borderRadius:"50%", animation:"spin .8s linear infinite", margin:"0 auto 8px" }} />
-                  <div style={{ fontSize:13, color:"#aaa" }}>Setting up your account…</div>
+                  <div style={{ fontSize:13, color:"#aaa" }}>Initializing secure payment…</div>
                 </div>
               </div>
             )}
@@ -240,14 +237,14 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
             border:"none", borderRadius:12, fontFamily:"var(--font-body)", fontWeight:800, fontSize:16,
             cursor: step !== "ready" ? "not-allowed" : "pointer", marginBottom:12,
           }}>
-            {step === "processing" ? "⏳ Processing…"
-             : step === "loading"  ? "⏳ Setting up…"
+            {step === "processing" ? "⏳ Processing & Creating Account…"
+             : step === "loading"  ? "⏳ Initializing…"
              : step === "error"    ? "⚠️ Fix error above"
-             : "🚀 Complete Payment — $0 Today"}
+             : "🚀 Complete Payment & Create Account"}
           </button>
 
           <div style={{ textAlign:"center", fontSize:12, color:"#aaa", marginBottom:12 }}>
-            🔒 256-bit SSL · PCI-DSS compliant · Powered by Stripe
+            🔒 Account created only after payment · 256-bit SSL · Powered by Stripe
           </div>
 
           <div style={{ background:"#fff8e1", border:"1px solid #ffe082", borderRadius:10, padding:"10px 14px", fontSize:12, color:"#7b5e00", marginBottom:12 }}>
