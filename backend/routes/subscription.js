@@ -173,3 +173,177 @@ router.post("/cancel", protect, authorize("owner","manager"), async (req, res) =
 });
 
 module.exports = router;
+
+// ── POST /api/subscription/guest-intent — no auth needed ─────────────────
+// Creates Stripe intent WITHOUT creating a user account
+router.post("/guest-intent", async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
+    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
+
+    const { firstName, lastName, email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email required" });
+
+    // Check email not already registered
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ success: false, message: "Email already registered. Please log in instead." });
+
+    // Create Stripe customer (no DB user yet)
+    const customer = await stripe.customers.create({
+      email,
+      name: `${firstName || ""} ${lastName || ""}`.trim(),
+      metadata: { pendingRegistration: "true" },
+    });
+
+    // Create subscription intent
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items:    [{ price: process.env.STRIPE_PRICE_ID }],
+      payment_behavior: "default_incomplete",
+      payment_settings: { save_default_payment_method: "on_subscription" },
+      expand:           ["latest_invoice.payment_intent"],
+      trial_period_days: 7,
+      metadata:         { pendingEmail: email },
+    });
+
+    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
+    res.json({
+      success:        true,
+      clientSecret,
+      customerId:     customer.id,
+      subscriptionId: subscription.id,
+    });
+  } catch (err) {
+    console.error("Guest intent error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── POST /api/subscription/register-and-activate — no auth needed ─────────
+// Called AFTER payment confirmed — creates user + activates subscription
+router.post("/register-and-activate", async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, customerId } = req.body;
+    if (!firstName || !lastName || !email || !password || !customerId)
+      return res.status(400).json({ success: false, message: "All fields required" });
+
+    // Final check — email not taken
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ success: false, message: "Email already registered" });
+
+    // Create user in DB NOW (after payment)
+    const user = await User.create({
+      firstName, lastName, email, password,
+      role:               "owner",
+      position:           "Owner",
+      availability:       "Full-Time",
+      stripeCustomerId:   customerId,
+      subscriptionStatus: "active",
+      subscriptionPlan:   "pro",
+    });
+
+    // Send trial confirmation email
+    try { await sendTrialEmail(email, firstName); } catch {}
+
+    // Generate token
+    const { generateToken } = require("../middleware/auth");
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: "Account created and subscription activated!",
+      token,
+      user: {
+        id: user._id, firstName: user.firstName, lastName: user.lastName,
+        email: user.email, role: user.role, subscriptionStatus: user.subscriptionStatus,
+      },
+    });
+  } catch (err) {
+    console.error("Register and activate error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── POST /api/subscription/create-intent-public ───────────────────────────
+// Creates Stripe intent WITHOUT registering user — for pre-auth payment
+router.post("/create-intent-public", async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
+    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
+
+    const { email, firstName, lastName } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email required" });
+
+    // Check email not already registered
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ success: false, message: "Email already registered. Please sign in." });
+
+    // Create Stripe customer (no DB user yet)
+    const customer = await stripe.customers.create({
+      email,
+      name: `${firstName || ""} ${lastName || ""}`.trim(),
+      metadata: { pendingRegistration: "true" },
+    });
+
+    // Create subscription with 7-day trial
+    const subscription = await stripe.subscriptions.create({
+      customer:         customer.id,
+      items:            [{ price: process.env.STRIPE_PRICE_ID }],
+      payment_behavior: "default_incomplete",
+      payment_settings: { save_default_payment_method: "on_subscription" },
+      expand:           ["latest_invoice.payment_intent"],
+      trial_period_days: 7,
+      metadata:         { pendingEmail: email, pendingFirstName: firstName, pendingLastName: lastName },
+    });
+
+    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
+    res.json({ success: true, clientSecret, customerId: customer.id, subscriptionId: subscription.id });
+  } catch (err) {
+    console.error("Public intent error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── POST /api/subscription/register-and-activate ─────────────────────────
+// Called AFTER payment confirmed — registers owner + activates subscription
+router.post("/register-and-activate", async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, customerId, subscriptionId } = req.body;
+    if (!firstName || !lastName || !email || !password || !customerId)
+      return res.status(400).json({ success: false, message: "All fields required" });
+
+    // Check not already registered
+    if (await User.findOne({ email }))
+      return res.status(400).json({ success: false, message: "Email already registered" });
+
+    // Create owner in DB NOW (after payment)
+    const user = await User.create({
+      firstName, lastName, email, password,
+      role: "owner", position: "Owner", availability: "Full-Time",
+      stripeCustomerId: customerId,
+      subscriptionStatus: "active",
+      subscriptionPlan:   "pro",
+    });
+
+    // Send confirmation email
+    try { await sendTrialEmail(email, firstName); } catch {}
+
+    const { generateToken } = require("../middleware/auth");
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      message: "Account created and subscription activated!",
+      token,
+      user: {
+        id: user._id, firstName: user.firstName, lastName: user.lastName,
+        email: user.email, role: user.role, subscriptionStatus: user.subscriptionStatus,
+      },
+    });
+  } catch (err) {
+    console.error("Register-activate error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
