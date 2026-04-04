@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../api";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
@@ -30,33 +29,19 @@ export default function Register({ onHomeClick, onLoginClick }) {
   const [password,     setPassword]     = useState("");
   const [position,     setPosition]     = useState("");
   const [availability, setAvailability] = useState("Full-Time");
-  const [orgCode,      setOrgCode]      = useState("");
-  const [codeStatus,   setCodeStatus]   = useState(null);
   const [error,        setError]        = useState("");
   const [loading,      setLoading]      = useState(false);
 
   const handleGoogle = () => loginWithPopup(`${API_URL}/auth/google?role=${role}`);
 
-  const verifyCode = async () => {
-    if (!orgCode || role === "owner") return;
-    try {
-      await api.post("/subscription/verify-code", { code: orgCode });
-      setCodeStatus("valid");
-    } catch { setCodeStatus("invalid"); }
-  };
-
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password) { setError("All fields are required."); return; }
-    if (role !== "owner" && !orgCode) { setError("Organisation code is required for employees and managers."); return; }
-    if (role !== "owner" && codeStatus === "invalid") { setError("Invalid organisation code."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true); setError("");
     try {
-      await register({
-        firstName, lastName, email, password, role, position, availability,
-        orgCode: role !== "owner" ? orgCode : undefined,
-      });
+      await register({ firstName, lastName, email, password, role, position, availability });
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError(err.response?.data?.message || "Registration failed.");
     } finally { setLoading(false); }
   };
 
@@ -71,31 +56,19 @@ export default function Register({ onHomeClick, onLoginClick }) {
       <div style={{ position:"absolute", top:20, right:24, zIndex:100 }}><LanguageSwitcher /></div>
 
       {/* LEFT */}
-      <div style={{ flex:"0 0 360px", background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 40px" }}>
+      <div style={{ flex:"0 0 340px", background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 40px" }}>
         <div className="su-brand" style={{ color:"#f5b800", marginBottom:20, cursor:"pointer" }} onClick={onHomeClick}>
           <div className="su-logobox">UP</div>{t("appName") || "SHIFT-UP"}
         </div>
         <h1 style={{ fontFamily:"var(--font-head)", fontSize:48, color:"#f5b800", lineHeight:1 }}>Create Account</h1>
         <p style={{ color:"#999", marginTop:14, fontSize:14, lineHeight:1.7 }}>
-          {role === "owner"
-            ? "Register as owner and subscribe to get your org code."
-            : role === "manager"
-            ? "Managers need an org code from their restaurant owner."
-            : "Employees need an org code from their manager or owner."}
+          Select your role and create your account to get started.
         </p>
-        {role !== "owner" && (
-          <div style={{ marginTop:20, background:"#f5b800", borderRadius:12, padding:16 }}>
-            <div style={{ fontWeight:800, fontSize:13, color:"#1a1a1a" }}>Need an org code?</div>
-            <div style={{ fontSize:12, color:"#1a1a1a", marginTop:4, opacity:.8 }}>
-              Ask your restaurant owner or manager for the 6-digit code.
-            </div>
-          </div>
-        )}
       </div>
 
       {/* RIGHT */}
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7", overflowY:"auto", padding:"40px 24px" }}>
-        <div style={{ width:"100%", maxWidth:440 }}>
+        <div style={{ width:"100%", maxWidth:420 }}>
           <h2 style={{ fontFamily:"var(--font-head)", fontSize:32, marginBottom:20 }}>Register</h2>
 
           {/* Portal picker */}
@@ -103,7 +76,7 @@ export default function Register({ onHomeClick, onLoginClick }) {
             <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>I am a</div>
             <div style={{ display:"flex", gap:4, background:"#efefec", borderRadius:10, padding:4 }}>
               {["employee","manager","owner"].map(p => (
-                <button key={p} onClick={() => { setRole(p); setOrgCode(""); setCodeStatus(null); setError(""); }} style={{
+                <button key={p} onClick={() => { setRole(p); setError(""); }} style={{
                   flex:1, padding:"9px 0", border:"none", borderRadius:7, cursor:"pointer",
                   fontFamily:"var(--font-body)", fontSize:12, fontWeight:700,
                   background: role===p ? PORTAL_COLORS[p] : "transparent",
@@ -119,8 +92,8 @@ export default function Register({ onHomeClick, onLoginClick }) {
             width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
             padding:"12px 16px", border:"1.5px solid #e0e0e0", borderRadius:10, cursor:"pointer",
             background:"#fff", fontFamily:"var(--font-body)", fontSize:14, fontWeight:600,
-            marginBottom:16, transition:"opacity .15s",
-          }} onMouseOver={e=>e.currentTarget.style.opacity=".8"} onMouseOut={e=>e.currentTarget.style.opacity="1"}>
+            marginBottom:16,
+          }}>
             <GoogleIcon /> Sign up with Google
           </button>
 
@@ -131,32 +104,6 @@ export default function Register({ onHomeClick, onLoginClick }) {
           </div>
 
           {error && <div style={{ padding:"10px 14px", background:"#fee2e2", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:12 }}>{error}</div>}
-
-          {/* Org code for non-owners */}
-          {role !== "owner" && (
-            <div className="su-form-row" style={{ marginBottom:16 }}>
-              <label className="su-label" style={{ display:"flex", justifyContent:"space-between" }}>
-                <span>Organisation Code *</span>
-                {codeStatus === "valid"   && <span style={{ color:"#16a34a", fontSize:12 }}>✓ Valid</span>}
-                {codeStatus === "invalid" && <span style={{ color:"#dc2626", fontSize:12 }}>✗ Invalid</span>}
-              </label>
-              <input
-                className="su-input"
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-                value={orgCode}
-                onChange={e => { setOrgCode(e.target.value.replace(/\D/g,"")); setCodeStatus(null); }}
-                onBlur={verifyCode}
-                style={{
-                  letterSpacing: 6, fontSize: 20, textAlign:"center",
-                  borderColor: codeStatus === "valid" ? "#16a34a" : codeStatus === "invalid" ? "#dc2626" : undefined,
-                }}
-              />
-              <div style={{ fontSize:11, color:"#aaa", marginTop:4 }}>
-                Get this code from your restaurant owner or manager.
-              </div>
-            </div>
-          )}
 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <div className="su-form-row">
