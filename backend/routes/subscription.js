@@ -7,34 +7,170 @@ const getStripe = () => process.env.STRIPE_SECRET_KEY
   ? require("stripe")(process.env.STRIPE_SECRET_KEY) : null;
 
 const sendTrialEmail = async (toEmail, name) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
-  const nodemailer  = require("nodemailer");
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
-  await transporter.sendMail({
-    from:    `"SHIFT-UP" <${process.env.EMAIL_USER}>`,
-    to:      toEmail,
-    subject: "🎉 Your SHIFT-UP 7-Day Free Trial Has Started!",
-    html: `
-      <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#fff;border-radius:16px;overflow:hidden">
-        <div style="background:#1a1a1a;padding:32px 40px;text-align:center">
-          <div style="font-size:28px;font-weight:900;color:#f5b800;letter-spacing:2px">SHIFT-UP</div>
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`⚠️  No email config — trial started for ${toEmail}`);
+    return;
+  }
+  try {
+    const nodemailer  = require("nodemailer");
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    });
+    await transporter.sendMail({
+      from:    `"SHIFT-UP" <${process.env.EMAIL_USER}>`,
+      to:      toEmail,
+      subject: "🎉 Welcome to SHIFT-UP — Your 7-Day Free Trial Has Started!",
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#fff;border-radius:16px;overflow:hidden">
+          <div style="background:#1a1a1a;padding:32px 40px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#f5b800;letter-spacing:2px">SHIFT-UP</div>
+            <div style="color:#888;font-size:13px">Workforce Management</div>
+          </div>
+          <div style="padding:40px">
+            <h2 style="color:#1a1a1a">🎁 Your 7-Day Free Trial Has Started!</h2>
+            <p style="color:#555;line-height:1.7">Hi ${name}! Welcome to SHIFT-UP. You have full access for 7 days — no charge until your trial ends.</p>
+            <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:20px;text-align:center;margin:24px 0">
+              <div style="font-size:14px;color:#166534;font-weight:700">✅ Your account is ready</div>
+              <div style="font-size:13px;color:#166534;margin-top:4px">Log in now and start managing your team</div>
+            </div>
+            <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/login" style="display:block;text-align:center;background:#f5b800;color:#1a1a1a;font-weight:800;font-size:15px;padding:16px;border-radius:10px;text-decoration:none;margin:24px 0">
+              Log In to SHIFT-UP →
+            </a>
+            <p style="font-size:12px;color:#aaa;text-align:center">Trial ends in 7 days. Cancel anytime = $0. After trial: $5 CAD/month.</p>
+          </div>
         </div>
-        <div style="padding:40px">
-          <h2 style="font-size:22px;color:#1a1a1a">🎁 Your 7-Day Free Trial Has Started!</h2>
-          <p style="color:#555;line-height:1.7">Hi ${name || "there"}! Full access for 7 days. No charge until trial ends.</p>
-          <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}" style="display:block;text-align:center;background:#f5b800;color:#1a1a1a;font-weight:800;font-size:15px;padding:16px;border-radius:10px;text-decoration:none;margin:24px 0">
-            Go to Dashboard →
-          </a>
-          <p style="font-size:12px;color:#aaa;text-align:center">Trial ends in 7 days. Cancel anytime = $0. After trial: $5 CAD/month.</p>
-        </div>
-      </div>
-    `,
-  });
-  console.log(`✅ Trial email sent to ${toEmail}`);
+      `,
+    });
+    console.log(`✅ Trial email sent to ${toEmail}`);
+  } catch (err) {
+    console.error("Email error:", err.message);
+  }
 };
+
+// ============================================================
+// PUBLIC ROUTES (no auth needed)
+// ============================================================
+
+// POST /api/subscription/setup-intent
+// Creates a SetupIntent to collect card details WITHOUT charging.
+// Works even with trial (no payment needed upfront).
+router.post("/setup-intent", async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
+
+    const { email, firstName, lastName } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email required" });
+
+    // Create or find Stripe customer
+    let customer;
+    const existing = await stripe.customers.list({ email, limit: 1 });
+    if (existing.data.length > 0) {
+      customer = existing.data[0];
+    } else {
+      customer = await stripe.customers.create({
+        email,
+        name: `${firstName || ""} ${lastName || ""}`.trim(),
+        metadata: { pendingRegistration: "true" },
+      });
+    }
+
+    // Create SetupIntent — collects card, no charge
+    const setupIntent = await stripe.setupIntents.create({
+      customer:              customer.id,
+      payment_method_types:  ["card"],
+      usage:                 "off_session",
+      metadata: {
+        pendingEmail:     email,
+        firstName:        firstName || "",
+        lastName:         lastName  || "",
+        customerId:       customer.id,
+      },
+    });
+
+    res.json({
+      success:      true,
+      clientSecret: setupIntent.client_secret,
+      customerId:   customer.id,
+      setupIntentId: setupIntent.id,
+    });
+  } catch (err) {
+    console.error("Setup intent error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/subscription/register-and-activate
+// Called AFTER SetupIntent confirmed.
+// Creates subscription with trial + registers owner in DB.
+router.post("/register-and-activate", async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
+    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
+
+    const { firstName, lastName, email, password, customerId, paymentMethodId } = req.body;
+
+    if (!firstName || !lastName || !email || !password)
+      return res.status(400).json({ success: false, message: "All fields required" });
+    if (!customerId)
+      return res.status(400).json({ success: false, message: "Customer ID required" });
+
+    // Check email not already registered
+    if (await User.findOne({ email }))
+      return res.status(400).json({ success: false, message: "Email already registered. Please sign in." });
+
+    // Set payment method as default on customer
+    if (paymentMethodId) {
+      await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId },
+      });
+    }
+
+    // Create subscription with 7-day trial
+    const subscription = await stripe.subscriptions.create({
+      customer:          customerId,
+      items:             [{ price: process.env.STRIPE_PRICE_ID }],
+      trial_period_days: 7,
+      metadata:          { email, firstName, lastName },
+    });
+
+    // Register owner in DB
+    const user = await User.create({
+      firstName, lastName, email, password,
+      role:               "owner",
+      position:           "Owner",
+      availability:       "Full-Time",
+      subscriptionStatus: "active",
+      subscriptionPlan:   "pro",
+      stripeCustomerId:   customerId,
+    });
+
+    // Send welcome email
+    try { await sendTrialEmail(user.email, user.firstName); } catch {}
+
+    const { generateToken } = require("../middleware/auth");
+
+    res.json({
+      success: true,
+      message: "Account created and trial started",
+      token:   generateToken(user._id),
+      user: {
+        id: user._id, firstName: user.firstName, lastName: user.lastName,
+        email: user.email, role: user.role,
+        subscriptionStatus: user.subscriptionStatus,
+      },
+    });
+  } catch (err) {
+    console.error("Register and activate error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================================
+// AUTHENTICATED ROUTES
+// ============================================================
 
 // GET /api/subscription/plan
 router.get("/plan", (req, res) => {
@@ -68,77 +204,28 @@ router.get("/status", protect, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// POST /api/subscription/checkout
-router.post("/checkout", protect, authorize("owner","manager"), async (req, res) => {
+// POST /api/subscription/cancel
+router.post("/cancel", protect, authorize("owner","manager"), async (req, res) => {
   try {
     const stripe = getStripe();
     if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
-    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
 
     const user = await User.findById(req.user._id);
-    let customerId = user.stripeCustomerId;
-    if (!customerId) {
-      const customer = await stripe.customers.create({ email: user.email, name: `${user.firstName} ${user.lastName}`, metadata: { userId: user._id.toString() } });
-      customerId = customer.id; user.stripeCustomerId = customerId; await user.save();
-    }
+    if (!user.stripeCustomerId) return res.status(400).json({ success: false, message: "No subscription found" });
 
-    const existingSubs = await stripe.subscriptions.list({ customer: customerId, limit: 10 });
-    const hadTrial     = existingSubs.data.some(s => s.trial_start);
+    const [a, t] = await Promise.all([
+      stripe.subscriptions.list({ customer: user.stripeCustomerId, status: "active",   limit: 1 }),
+      stripe.subscriptions.list({ customer: user.stripeCustomerId, status: "trialing", limit: 1 }),
+    ]);
+    const sub = a.data[0] || t.data[0];
+    if (!sub) return res.status(400).json({ success: false, message: "No active subscription" });
 
-    const sessionConfig = {
-      customer: customerId, payment_method_types: ["card"], mode: "subscription",
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${process.env.FRONTEND_URL || "http://localhost:3000"}/subscription/cancel`,
-      metadata: { userId: user._id.toString() },
-    };
-    if (!hadTrial) sessionConfig.subscription_data = { trial_period_days: 7 };
-
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-    res.json({ success: true, url: session.url, hasTrial: !hadTrial });
-  } catch (err) { console.error("Checkout error:", err.message); res.status(500).json({ success: false, message: err.message }); }
-});
-
-// POST /api/subscription/create-intent
-router.post("/create-intent", protect, authorize("owner","manager"), async (req, res) => {
-  try {
-    const stripe = getStripe();
-    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
-    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
-
-    const user = await User.findById(req.user._id);
-    let customerId = user.stripeCustomerId;
-    if (!customerId) {
-      const customer = await stripe.customers.create({ email: user.email, name: `${user.firstName} ${user.lastName}`, metadata: { userId: user._id.toString() } });
-      customerId = customer.id; user.stripeCustomerId = customerId; await user.save();
-    }
-
-    const existingSubs = await stripe.subscriptions.list({ customer: customerId, limit: 10 });
-    const hadTrial     = existingSubs.data.some(s => s.trial_start);
-
-    const subConfig = {
-      customer: customerId,
-      items: [{ price: process.env.STRIPE_PRICE_ID }],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription" },
-      expand: ["latest_invoice.payment_intent"],
-      metadata: { userId: user._id.toString() },
-    };
-    if (!hadTrial) subConfig.trial_period_days = 7;
-
-    const subscription = await stripe.subscriptions.create(subConfig);
-    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-    res.json({ success: true, clientSecret, subscriptionId: subscription.id, hasTrial: !hadTrial });
-  } catch (err) { console.error("Create intent error:", err.message); res.status(500).json({ success: false, message: err.message }); }
-});
-
-// POST /api/subscription/activate
-router.post("/activate", protect, async (req, res) => {
-  try {
-    await User.findByIdAndUpdate(req.user._id, { subscriptionStatus: "active", subscriptionPlan: "pro" });
-    const user = await User.findById(req.user._id);
-    try { await sendTrialEmail(user.email, user.firstName); } catch {}
-    res.json({ success: true });
+    const updated = await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true });
+    res.json({
+      success:    true,
+      cancelDate: new Date(updated.current_period_end * 1000),
+      wasTrial:   updated.status === "trialing",
+    });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
@@ -147,297 +234,16 @@ router.post("/portal", protect, authorize("owner","manager"), async (req, res) =
   try {
     const stripe = getStripe();
     if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
+
     const user = await User.findById(req.user._id);
     if (!user.stripeCustomerId) return res.status(400).json({ success: false, message: "No subscription found" });
-    const session = await stripe.billingPortal.sessions.create({ customer: user.stripeCustomerId, return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/subscription` });
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer:   user.stripeCustomerId,
+      return_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}`,
+    });
     res.json({ success: true, url: session.url });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// POST /api/subscription/cancel
-router.post("/cancel", protect, authorize("owner","manager"), async (req, res) => {
-  try {
-    const stripe = getStripe();
-    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
-    const user = await User.findById(req.user._id);
-    if (!user.stripeCustomerId) return res.status(400).json({ success: false, message: "No subscription found" });
-    const [a, t] = await Promise.all([
-      stripe.subscriptions.list({ customer: user.stripeCustomerId, status: "active",   limit: 1 }),
-      stripe.subscriptions.list({ customer: user.stripeCustomerId, status: "trialing", limit: 1 }),
-    ]);
-    const sub = a.data[0] || t.data[0];
-    if (!sub) return res.status(400).json({ success: false, message: "No active subscription" });
-    const updated = await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true });
-    res.json({ success: true, cancelDate: new Date(updated.current_period_end * 1000), wasTrial: updated.status === "trialing" });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
-
 module.exports = router;
-
-// ── POST /api/subscription/guest-intent — no auth needed ─────────────────
-// Creates Stripe intent WITHOUT creating a user account
-router.post("/guest-intent", async (req, res) => {
-  try {
-    const stripe = getStripe();
-    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
-    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
-
-    const { firstName, lastName, email } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: "Email required" });
-
-    // Check email not already registered
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ success: false, message: "Email already registered. Please log in instead." });
-
-    // Create Stripe customer (no DB user yet)
-    const customer = await stripe.customers.create({
-      email,
-      name: `${firstName || ""} ${lastName || ""}`.trim(),
-      metadata: { pendingRegistration: "true" },
-    });
-
-    // Create subscription intent
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items:    [{ price: process.env.STRIPE_PRICE_ID }],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription" },
-      expand:           ["latest_invoice.payment_intent"],
-      trial_period_days: 7,
-      metadata:         { pendingEmail: email },
-    });
-
-    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-    res.json({
-      success:        true,
-      clientSecret,
-      customerId:     customer.id,
-      subscriptionId: subscription.id,
-    });
-  } catch (err) {
-    console.error("Guest intent error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ── POST /api/subscription/register-and-activate — no auth needed ─────────
-// Called AFTER payment confirmed — creates user + activates subscription
-router.post("/register-and-activate", async (req, res) => {
-  try {
-    const { firstName, lastName, email, password, customerId } = req.body;
-    if (!firstName || !lastName || !email || !password || !customerId)
-      return res.status(400).json({ success: false, message: "All fields required" });
-
-    // Final check — email not taken
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ success: false, message: "Email already registered" });
-
-    // Create user in DB NOW (after payment)
-    const user = await User.create({
-      firstName, lastName, email, password,
-      role:               "owner",
-      position:           "Owner",
-      availability:       "Full-Time",
-      stripeCustomerId:   customerId,
-      subscriptionStatus: "active",
-      subscriptionPlan:   "pro",
-    });
-
-    // Send trial confirmation email
-    try { await sendTrialEmail(email, firstName); } catch {}
-
-    // Generate token
-    const { generateToken } = require("../middleware/auth");
-    const token = generateToken(user._id);
-
-    res.json({
-      success: true,
-      message: "Account created and subscription activated!",
-      token,
-      user: {
-        id: user._id, firstName: user.firstName, lastName: user.lastName,
-        email: user.email, role: user.role, subscriptionStatus: user.subscriptionStatus,
-      },
-    });
-  } catch (err) {
-    console.error("Register and activate error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ── POST /api/subscription/create-intent-public ───────────────────────────
-// Creates Stripe intent WITHOUT registering user — for pre-auth payment
-router.post("/create-intent-public", async (req, res) => {
-  try {
-    const stripe = getStripe();
-    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
-    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
-
-    const { email, firstName, lastName } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: "Email required" });
-
-    // Check email not already registered
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ success: false, message: "Email already registered. Please sign in." });
-
-    // Create Stripe customer (no DB user yet)
-    const customer = await stripe.customers.create({
-      email,
-      name: `${firstName || ""} ${lastName || ""}`.trim(),
-      metadata: { pendingRegistration: "true" },
-    });
-
-    // Create subscription with 7-day trial
-    const subscription = await stripe.subscriptions.create({
-      customer:         customer.id,
-      items:            [{ price: process.env.STRIPE_PRICE_ID }],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription" },
-      expand:           ["latest_invoice.payment_intent"],
-      trial_period_days: 7,
-      metadata:         { pendingEmail: email, pendingFirstName: firstName, pendingLastName: lastName },
-    });
-
-    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-    res.json({ success: true, clientSecret, customerId: customer.id, subscriptionId: subscription.id });
-  } catch (err) {
-    console.error("Public intent error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ── POST /api/subscription/register-and-activate ─────────────────────────
-// Called AFTER payment confirmed — registers owner + activates subscription
-router.post("/register-and-activate", async (req, res) => {
-  try {
-    const { firstName, lastName, email, password, customerId, subscriptionId } = req.body;
-    if (!firstName || !lastName || !email || !password || !customerId)
-      return res.status(400).json({ success: false, message: "All fields required" });
-
-    // Check not already registered
-    if (await User.findOne({ email }))
-      return res.status(400).json({ success: false, message: "Email already registered" });
-
-    // Create owner in DB NOW (after payment)
-    const user = await User.create({
-      firstName, lastName, email, password,
-      role: "owner", position: "Owner", availability: "Full-Time",
-      stripeCustomerId: customerId,
-      subscriptionStatus: "active",
-      subscriptionPlan:   "pro",
-    });
-
-    // Send confirmation email
-    try { await sendTrialEmail(email, firstName); } catch {}
-
-    const { generateToken } = require("../middleware/auth");
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      success: true,
-      message: "Account created and subscription activated!",
-      token,
-      user: {
-        id: user._id, firstName: user.firstName, lastName: user.lastName,
-        email: user.email, role: user.role, subscriptionStatus: user.subscriptionStatus,
-      },
-    });
-  } catch (err) {
-    console.error("Register-activate error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ── POST /api/subscription/create-intent-public ───────────────────────────
-// Called BEFORE user is registered — creates Stripe customer + intent
-router.post("/create-intent-public", async (req, res) => {
-  try {
-    const stripe = getStripe();
-    if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
-    if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
-
-    const { email, firstName, lastName } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: "Email required" });
-
-    // Create Stripe customer (no DB user yet)
-    const customer = await stripe.customers.create({
-      email,
-      name: `${firstName || ""} ${lastName || ""}`.trim(),
-      metadata: { pendingRegistration: "true" },
-    });
-
-    // Create subscription intent with 7-day trial
-    const subscription = await stripe.subscriptions.create({
-      customer:         customer.id,
-      items:            [{ price: process.env.STRIPE_PRICE_ID }],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription" },
-      expand:           ["latest_invoice.payment_intent"],
-      trial_period_days: 7,
-      metadata:          { pendingEmail: email, firstName: firstName || "", lastName: lastName || "" },
-    });
-
-    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-
-    res.json({
-      success: true,
-      clientSecret,
-      customerId:     customer.id,
-      subscriptionId: subscription.id,
-    });
-  } catch (err) {
-    console.error("Create intent public error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ── POST /api/subscription/register-and-activate ──────────────────────────
-// Called AFTER payment confirmed — registers owner in DB and activates
-router.post("/register-and-activate", async (req, res) => {
-  try {
-    const { firstName, lastName, email, password, customerId } = req.body;
-    if (!firstName || !lastName || !email || !password)
-      return res.status(400).json({ success: false, message: "All fields required" });
-
-    // Check if already registered
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      // Register the owner now (after payment)
-      user = await User.create({
-        firstName, lastName, email, password,
-        role:         "owner",
-        position:     "Owner",
-        availability: "Full-Time",
-        subscriptionStatus: "active",
-        subscriptionPlan:   "pro",
-        stripeCustomerId:   customerId || null,
-      });
-    } else {
-      // Update existing user
-      user.subscriptionStatus = "active";
-      user.subscriptionPlan   = "pro";
-      if (customerId) user.stripeCustomerId = customerId;
-      await user.save();
-    }
-
-    // Send confirmation email
-    try { await sendTrialEmail(user.email, user.firstName); } catch {}
-
-    const { generateToken } = require("../middleware/auth");
-    const token = generateToken(user._id);
-
-    res.json({
-      success: true,
-      message: "Account created and subscription activated",
-      token,
-      user: {
-        id: user._id, firstName: user.firstName, lastName: user.lastName,
-        email: user.email, role: user.role, subscriptionStatus: user.subscriptionStatus,
-      },
-    });
-  } catch (err) {
-    console.error("Register and activate error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
