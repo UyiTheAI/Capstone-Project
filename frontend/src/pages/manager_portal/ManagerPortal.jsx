@@ -43,7 +43,7 @@ export default function ManagerPortal() {
     { key:"staffReport",      label: t("staffReports")     || "Staff Reports"                    },
     { key:"employeeOverview", label: t("employeeOverview") || "Overview"                         },
     ...(isOwner ? [{ key:"tipManager", label: t("tips") || "Tips" }] : []),
-    { key:"registerStaff",    label: isOwner ? "Register Staff" : "Register Employee", highlight: true },
+    { key:"registerStaff",    label: isOwner ? "Register Staff" : "Register Employee" },
   ];
 
   const renderView = () => {
@@ -70,18 +70,11 @@ export default function ManagerPortal() {
         </div>
 
         <div className="su-nav">
-          {navItems.map(({ key, label, badge, highlight }) => (
+          {navItems.map(({ key, label, badge }) => (
             <button
               key={key}
               onClick={() => setView(key)}
               className={`su-navbtn ${view===key ? "active" : ""}`}
-              style={highlight ? {
-                background:   view===key ? "#f5b800" : "rgba(245,184,0,.18)",
-                color:        view===key ? "#1a1a1a" : "#f5b800",
-                borderRadius: 8,
-                fontWeight:   800,
-                border:       "1px solid rgba(245,184,0,.4)",
-              } : {}}
             >
               {badge
                 ? <span className="su-badge-wrap">{label}<span className="su-badge-dot" /></span>
