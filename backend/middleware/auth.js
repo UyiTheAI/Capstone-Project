@@ -34,4 +34,4 @@ const authorize = (...roles) => (req, res, next) => {
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || "7d" });
 
-module.exports = { protect, authorize, generateToken };git 
+module.exports = { protect, authorize, generateToken };
