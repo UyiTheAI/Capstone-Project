@@ -1,79 +1,87 @@
-const express  = require("express");
-const router   = express.Router();
-const Tip      = require("../models/tip");
-const User     = require("../models/User");
+const express      = require("express");
+const router       = express.Router();
+const Tip          = require("../models/Tip");
 const Notification = require("../models/Notification");
 const { protect, authorize } = require("../middleware/auth");
+const { getMyEmployeeIds } = require("../utils/getMyEmployees");
 
-// GET /api/tips — all tip records (owner only)
+// GET /api/tips — org tip history (owner/manager)
 router.get("/", protect, authorize("owner","manager"), async (req, res) => {
   try {
-    const tips = await Tip.find()
-      .populate("distributions.employee", "firstName lastName avatar")
-      .populate("recordedBy", "firstName lastName")
-      .sort({ date: -1 });
-    res.json({ success: true, tips });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    const empIds = await getMyEmployeeIds(req.user._id, req.user.role);
+    const tips   = await Tip.find({ "distributions.employee":{ $in:empIds } })
+      .populate("distributions.employee","firstName lastName name position")
+      .populate("recordedBy","firstName lastName name")
+      .sort({ date:-1 }).limit(50);
+    res.json({ success:true, tips });
+  } catch(err) { res.status(500).json({ success:false, message:err.message }); }
 });
 
-// GET /api/tips/mine — my own tip history
+// GET /api/tips/mine — employee tip history
 router.get("/mine", protect, async (req, res) => {
   try {
-    const tips = await Tip.find({ "distributions.employee": req.user._id })
-      .populate("recordedBy", "firstName lastName")
-      .sort({ date: -1 });
+    const tips = await Tip.find({ "distributions.employee":req.user._id })
+      .populate("recordedBy","firstName lastName name")
+      .sort({ date:-1 });
 
-    const myTips = tips.map(tip => ({
-      _id:        tip._id,
-      date:       tip.date,
-      totalAmount: tip.totalAmount,
-      splitMethod: tip.splitMethod,
-      note:        tip.note,
-      recordedBy:  tip.recordedBy,
-      myAmount:    tip.distributions.find(d => d.employee.toString() === req.user._id.toString())?.amount || 0,
-    }));
-
-    res.json({ success: true, tips: myTips });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    const myTips = tips.map(t => {
+      const dist = t.distributions.find(d => d.employee.toString() === req.user._id.toString());
+      return {
+        _id:t._id, date:t.date,
+        totalAmount: t.totalAmount,
+        myAmount:    dist?.amount || 0,
+        note:        t.note,
+        splitMethod: t.splitMethod,
+        recordedBy:  t.recordedBy,
+      };
+    });
+    res.json({ success:true, tips:myTips });
+  } catch(err) { res.status(500).json({ success:false, message:err.message }); }
 });
 
-// POST /api/tips — distribute tips + notify each employee
+// POST /api/tips — distribute tips
 router.post("/", protect, authorize("owner","manager"), async (req, res) => {
   try {
     const { date, totalAmount, splitMethod, note, distributions } = req.body;
-    if (!date || !totalAmount || !distributions?.length)
-      return res.status(400).json({ success: false, message: "date, totalAmount and distributions required" });
+    if (!date || !totalAmount)
+      return res.status(400).json({ success:false, message:"Date and totalAmount required" });
 
-    const tip = await Tip.create({ date, totalAmount, splitMethod, note, recordedBy: req.user._id, distributions });
+    const empIds = await getMyEmployeeIds(req.user._id, req.user.role);
+    let finalDist = [];
 
-    // ── Send notification to every employee in the distribution ────────────
-    const notifPromises = distributions.map(async (d) => {
-      const emp = await User.findById(d.employee).select("firstName");
-      if (!emp) return;
-      return Notification.create({
-        recipient: d.employee,
-        type:      "SHIFT_ALERT",
-        title:     "💰 Tips Distributed",
-        message:   `You received $${d.amount.toFixed(2)} in tips for ${new Date(date).toLocaleDateString()}. ${note ? `Note: ${note}` : ""}`,
-        read:      false,
-      });
+    if (splitMethod === "equal") {
+      const share = parseFloat(totalAmount) / empIds.length;
+      finalDist   = empIds.map(id => ({ employee:id, amount:parseFloat(share.toFixed(2)), hours:0 }));
+    } else if (splitMethod === "manual" && distributions?.length) {
+      // Only allow distributions to own org employees
+      const allowed = empIds.map(id=>id.toString());
+      finalDist = distributions
+        .filter(d => allowed.includes(d.employee?.toString()))
+        .map(d => ({ employee:d.employee, amount:parseFloat(d.amount)||0, hours:d.hours||0 }));
+    } else {
+      finalDist = (distributions||[]).map(d => ({ employee:d.employee, amount:parseFloat(d.amount)||0, hours:d.hours||0 }));
+    }
+
+    const tip = await Tip.create({
+      date, totalAmount:parseFloat(totalAmount), splitMethod:splitMethod||"equal",
+      note:note||"", recordedBy:req.user._id, distributions:finalDist,
     });
-    await Promise.all(notifPromises);
 
-    const populated = await Tip.findById(tip._id)
-      .populate("distributions.employee", "firstName lastName avatar")
-      .populate("recordedBy", "firstName lastName");
+    // Notify each employee
+    await Notification.insertMany(finalDist.map(d => ({
+      recipient: d.employee,
+      type:      "APPROVED",
+      title:     "💰 Tips Distributed",
+      message:   `You received $${d.amount.toFixed(2)} in tips for ${new Date(date).toLocaleDateString()}`,
+    })));
 
-    res.status(201).json({ success: true, tip: populated });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
+    await tip.populate([
+      { path:"distributions.employee", select:"firstName lastName name" },
+      { path:"recordedBy", select:"firstName lastName name" },
+    ]);
 
-// DELETE /api/tips/:id
-router.delete("/:id", protect, authorize("owner"), async (req, res) => {
-  try {
-    await Tip.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: "Tip record deleted" });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    res.status(201).json({ success:true, tip });
+  } catch(err) { res.status(400).json({ success:false, message:err.message }); }
 });
 
 module.exports = router;

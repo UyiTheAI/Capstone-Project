@@ -4,10 +4,11 @@ import api from "../../api";
 const PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "";
 
 export default function PaymentPage({ onBack, onGoToLogin }) {
-  const [stripe,       setStripe]       = React.useState(null);
-  const [clientSecret, setClientSecret] = React.useState("");
-  const [customerId,   setCustomerId]   = React.useState("");
-  const [step,         setStep]         = React.useState("loading");
+  const [stripe,        setStripe]        = React.useState(null);
+  const [clientSecret,  setClientSecret]  = React.useState("");
+  const [customerId,    setCustomerId]    = React.useState("");
+  const [setupIntentId, setSetupIntentId] = React.useState("");
+  const [step,          setStep]          = React.useState("loading");
   const [error,        setError]        = React.useState("");
   const [userEmail,    setUserEmail]    = React.useState("");
   const elementsRef = React.useRef(null);
@@ -45,10 +46,15 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
     if (!stripe) return;
     const pending = getPending();
     if (!pending?.email) return;
+    // Reset mounted so elements re-mounts with new clientSecret
+    mounted.current = false;
     api.post("/subscription/setup-intent", { email: pending.email, firstName: pending.firstName, lastName: pending.lastName })
       .then(res => {
-        if (res.data.clientSecret) { setClientSecret(res.data.clientSecret); setCustomerId(res.data.customerId || ""); }
-        else { setError("Failed to initialize payment."); setStep("error"); }
+        if (res.data.clientSecret) {
+          setClientSecret(res.data.clientSecret);
+          setCustomerId(res.data.customerId || "");
+          setSetupIntentId(res.data.setupIntentId || "");
+        } else { setError("Failed to initialize payment."); setStep("error"); }
       })
       .catch(err => { setError(err.response?.data?.message || "Failed to initialize payment."); setStep("error"); });
   }, [stripe]);
@@ -67,14 +73,6 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
       elementsRef.current = el;
       const pe = el.create("payment", {
         layout: { type: "tabs", defaultCollapsed: false },
-        // Disable phone number field — not needed for our flow
-        fields: {
-          billingDetails: {
-            phone: "never",
-            address: "never",
-          },
-        },
-        wallets: { googlePay: "never", applePay: "never" },
       });
       pe.mount("#stripe-payment-element");
       pe.on("ready",  () => { setStep("ready"); setError(""); });
@@ -86,13 +84,25 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
   const handlePay = async () => {
     if (!stripe || !elementsRef.current || step !== "ready") return;
     setStep("processing"); setError("");
+    const pending = getPending();
+    if (!pending) { setError("Session expired. Please go back."); setStep("error"); return; }
+
     const { error: stripeError, setupIntent } = await stripe.confirmSetup({
       elements:      elementsRef.current,
-      confirmParams: { return_url: window.location.origin },
-      redirect:      "if_required",
+      confirmParams: {
+        return_url: window.location.origin,
+        payment_method_data: {
+          billing_details: {
+            name:  `${pending.firstName || ""} ${pending.lastName || ""}`.trim(),
+            email: pending.email || "",
+          },
+        },
+      },
+      redirect: "if_required",
     });
+
     if (stripeError) { setError(stripeError.message); setStep("ready"); return; }
-    const pending = getPending();
+
     try {
       await api.post("/subscription/register-and-activate", {
         firstName:       pending.firstName,
@@ -101,6 +111,7 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
         password:        pending.password,
         customerId,
         paymentMethodId: setupIntent?.payment_method,
+        setupIntentId:   setupIntent?.id || setupIntentId,
       });
       localStorage.removeItem("shiftup_pending_owner");
       localStorage.removeItem("shiftup_token");
