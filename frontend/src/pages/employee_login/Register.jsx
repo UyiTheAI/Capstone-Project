@@ -1,27 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import "../../App.css";
-import { useLanguage } from "../../context/LanguageContext";
-import LanguageSwitcher from "../../components/LanguageSwitcher";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+export default function RegisterStaff() {
+  const { user } = useAuth();
+  const isOwner  = user?.role === "owner";
 
-function GoogleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 48 48">
-      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
-      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-      <path fill="#4CAF50" d="M24 44c5.2 0 9.8-1.9 13.4-5l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.3C9.7 35.7 16.3 44 24 44z"/>
-      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.2 5.2C37.2 39.5 44 34.5 44 24c0-1.3-.1-2.6-.4-3.9z"/>
-    </svg>
-  );
-}
-
-const PORTAL_COLORS = { employee:"#4f46e5", manager:"#0891b2", owner:"#f5b800" };
-
-export default function Register({ onHomeClick, onLoginClick }) {
-  const { t }                        = useLanguage();
-  const { register, loginWithPopup } = useAuth();
   const [role,         setRole]         = useState("employee");
   const [firstName,    setFirstName]    = useState("");
   const [lastName,     setLastName]     = useState("");
@@ -29,122 +13,212 @@ export default function Register({ onHomeClick, onLoginClick }) {
   const [password,     setPassword]     = useState("");
   const [position,     setPosition]     = useState("");
   const [availability, setAvailability] = useState("Full-Time");
-  const [error,        setError]        = useState("");
   const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState("");
+  const [success,      setSuccess]      = useState("");
+  const [staffList,    setStaffList]    = useState([]);
+  const [listLoading,  setListLoading]  = useState(true);
 
-  const handleGoogle = () => loginWithPopup(`${API_URL}/auth/google?role=${role}`);
+  useEffect(() => { fetchStaff(); }, []);
 
-  const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !password) { setError("All fields are required."); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
-    setLoading(true); setError("");
+  const fetchStaff = async () => {
+    setListLoading(true);
     try {
-      await register({ firstName, lastName, email, password, role, position, availability });
+      const res = await api.get("/users");
+      setStaffList(res.data.users || []);
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed.");
+      console.error("Failed to load staff:", err.message);
+    } finally { setListLoading(false); }
+  };
+
+  const resetForm = () => {
+    setFirstName(""); setLastName(""); setEmail("");
+    setPassword(""); setPosition(""); setAvailability("Full-Time");
+    setError(""); setSuccess("");
+  };
+
+  const handleCreate = async () => {
+    setError(""); setSuccess("");
+    if (!firstName.trim()) { setError("First name is required."); return; }
+    if (!lastName.trim())  { setError("Last name is required."); return; }
+    if (!email.trim())     { setError("Email is required."); return; }
+    if (!password)         { setError("Password is required."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { setError("Please enter a valid email."); return; }
+
+    setLoading(true);
+    try {
+      const res = await api.post("/users/create-employee", {
+        firstName: firstName.trim(), lastName: lastName.trim(),
+        email: email.trim().toLowerCase(), password,
+        position: position.trim(), availability, role,
+      });
+      setSuccess(`✅ ${res.data.message}`);
+      resetForm();
+      fetchStaff();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create account.");
     } finally { setLoading(false); }
   };
 
-  const portalLabels = {
-    employee: t("employeePortal") || "Employee",
-    manager:  t("managerPortal")  || "Manager",
-    owner:    t("ownerPortal")    || "Owner",
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Remove ${name}? They will no longer be able to log in.`)) return;
+    try {
+      await api.delete(`/users/${id}`);
+      setStaffList(prev => prev.filter(s => (s._id||s.id) !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to remove staff member.");
+    }
   };
 
-  return (
-    <div style={{ minHeight:"100vh", display:"flex", fontFamily:"var(--font-body)", position:"relative" }}>
-      <div style={{ position:"absolute", top:20, right:24, zIndex:100 }}><LanguageSwitcher /></div>
+  const inputStyle = {
+    width: "100%", padding: "11px 14px", border: "1.5px solid #e5e5e5",
+    borderRadius: 10, fontFamily: "var(--font-body)", fontSize: 14,
+    outline: "none", boxSizing: "border-box", background: "#fff",
+  };
+  const labelStyle = {
+    fontSize: 12, fontWeight: 700, color: "#888",
+    display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: .5,
+  };
+  const roleColorMap = { employee: "#4f46e5", manager: "#0891b2", owner: "#f5b800" };
 
-      {/* LEFT */}
-      <div style={{ flex:"0 0 340px", background:"#1a1a1a", display:"flex", flexDirection:"column", justifyContent:"center", padding:"56px 40px" }}>
-        <div className="su-brand" style={{ color:"#f5b800", marginBottom:20, cursor:"pointer" }} onClick={onHomeClick}>
-          <div className="su-logobox">UP</div>{t("appName") || "SHIFT-UP"}
-        </div>
-        <h1 style={{ fontFamily:"var(--font-head)", fontSize:48, color:"#f5b800", lineHeight:1 }}>Create Account</h1>
-        <p style={{ color:"#999", marginTop:14, fontSize:14, lineHeight:1.7 }}>
-          Select your role and create your account to get started.
+  return (
+    <div className="su-page">
+
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 className="su-title" style={{ marginBottom: 4 }}>
+          {isOwner ? "Register Staff" : "Register Employee"}
+        </h1>
+        <p style={{ color: "#888", fontSize: 14, margin: 0 }}>
+          {isOwner
+            ? "Create accounts for your managers and employees."
+            : "Create accounts for your employees."}
+          {" "}Only staff you register will appear here.
         </p>
       </div>
 
-      {/* RIGHT */}
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7", overflowY:"auto", padding:"40px 24px" }}>
-        <div style={{ width:"100%", maxWidth:420 }}>
-          <h2 style={{ fontFamily:"var(--font-head)", fontSize:32, marginBottom:20 }}>Register</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, alignItems: "start" }}>
 
-          {/* Portal picker */}
-          <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>I am a</div>
-            <div style={{ display:"flex", gap:4, background:"#efefec", borderRadius:10, padding:4 }}>
-              {["employee","manager","owner"].map(p => (
-                <button key={p} onClick={() => { setRole(p); setError(""); }} style={{
-                  flex:1, padding:"9px 0", border:"none", borderRadius:7, cursor:"pointer",
-                  fontFamily:"var(--font-body)", fontSize:12, fontWeight:700,
-                  background: role===p ? PORTAL_COLORS[p] : "transparent",
-                  color:      role===p ? (p==="owner" ? "#1a1a1a" : "#fff") : "#888",
-                  transition: "all .2s",
-                }}>{portalLabels[p]}</button>
-              ))}
+        {/* ── CREATE FORM ── */}
+        <div style={{ background: "#fff", borderRadius: 20, padding: "26px 24px", boxShadow: "0 4px 20px rgba(0,0,0,.06)", border: "1px solid #f0f0f0" }}>
+          <h3 style={{ fontFamily: "var(--font-head)", fontSize: 24, margin: "0 0 20px" }}>New Account</h3>
+
+          {/* Role toggle — only show manager for owners */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Account Type</label>
+            <div style={{ display: "flex", gap: 8, background: "#f0f0ec", borderRadius: 10, padding: 4 }}>
+              <button onClick={() => setRole("employee")} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, background: role==="employee"?"#4f46e5":"transparent", color: role==="employee"?"#fff":"#888", transition: "all .2s" }}>
+                👤 Employee
+              </button>
+              {isOwner && (
+                <button onClick={() => setRole("manager")} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 700, background: role==="manager"?"#0891b2":"transparent", color: role==="manager"?"#fff":"#888", transition: "all .2s" }}>
+                  🏷️ Manager
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Google */}
-          <button onClick={handleGoogle} style={{
-            width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-            padding:"12px 16px", border:"1.5px solid #e0e0e0", borderRadius:10, cursor:"pointer",
-            background:"#fff", fontFamily:"var(--font-body)", fontSize:14, fontWeight:600,
-            marginBottom:16,
-          }}>
-            <GoogleIcon /> Sign up with Google
+          {error   && <div style={{ padding:"10px 14px", background:"#fee2e2", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:14 }}>⚠️ {error}</div>}
+          {success && <div style={{ padding:"10px 14px", background:"#dcfce7", borderRadius:8, color:"#16a34a", fontSize:13, marginBottom:14 }}>{success}</div>}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={labelStyle}>First Name *</label>
+              <input style={inputStyle} value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="John" />
+            </div>
+            <div>
+              <label style={labelStyle}>Last Name *</label>
+              <input style={inputStyle} value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="Smith" />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={labelStyle}>Email *</label>
+            <input style={inputStyle} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="staff@email.com" />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={labelStyle}>Temporary Password *</label>
+            <input style={inputStyle} type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min 6 characters" />
+            <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>Share this with the staff member. They can change it in their Profile.</div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <div>
+              <label style={labelStyle}>Position</label>
+              <input style={inputStyle} value={position} onChange={e=>setPosition(e.target.value)} placeholder="e.g. Waitstaff" />
+            </div>
+            <div>
+              <label style={labelStyle}>Availability</label>
+              <select style={inputStyle} value={availability} onChange={e=>setAvailability(e.target.value)}>
+                <option value="Full-Time">Full-Time</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="On-Call">On-Call</option>
+              </select>
+            </div>
+          </div>
+
+          <button onClick={handleCreate} disabled={loading} style={{ width: "100%", padding: "13px 0", background: loading?"#ccc":"#f5b800", color: "#1a1a1a", border: "none", borderRadius: 12, fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 15, cursor: loading?"not-allowed":"pointer" }}>
+            {loading ? "Creating..." : `+ Create ${role==="manager"?"Manager":"Employee"} Account`}
           </button>
+        </div>
 
-          <div style={{ display:"flex", alignItems:"center", gap:10, margin:"0 0 16px" }}>
-            <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
-            <span style={{ fontSize:12, color:"#aaa" }}>or</span>
-            <div style={{ flex:1, height:1, background:"#e5e5e5" }} />
+        {/* ── STAFF LIST ── */}
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <h3 style={{ fontFamily: "var(--font-head)", fontSize: 24, margin: 0 }}>
+              Your Staff <span style={{ fontSize: 15, color: "#aaa", fontWeight: 400 }}>({staffList.length})</span>
+            </h3>
+            <button onClick={fetchStaff} style={{ background: "#f0f0ec", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#888", fontFamily: "var(--font-body)" }}>
+              🔄 Refresh
+            </button>
           </div>
 
-          {error && <div style={{ padding:"10px 14px", background:"#fee2e2", borderRadius:8, color:"#dc2626", fontSize:13, marginBottom:12 }}>{error}</div>}
-
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            <div className="su-form-row">
-              <label className="su-label">First Name</label>
-              <input className="su-input" value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="First name" />
+          {listLoading ? (
+            <div style={{ textAlign: "center", padding: 48, color: "#aaa", background: "#fff", borderRadius: 16 }}>Loading...</div>
+          ) : staffList.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 48, background: "#f9f9f7", borderRadius: 16, border: "2px dashed #e5e5e5", color: "#aaa" }}>
+              <div style={{ fontSize: 40, marginBottom: 10 }}>👥</div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>No staff registered yet</div>
+              <div style={{ fontSize: 13 }}>Use the form to add your first staff member</div>
             </div>
-            <div className="su-form-row">
-              <label className="su-label">Last Name</label>
-              <input className="su-input" value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="Last name" />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 500, overflowY: "auto" }}>
+              {staffList.map(s => {
+                const id   = s._id || s.id;
+                const name = `${s.firstName} ${s.lastName}`;
+                const ini  = `${s.firstName?.[0]||""}${s.lastName?.[0]||""}`.toUpperCase();
+                const bg   = roleColorMap[s.role] || "#888";
+                return (
+                  <div key={id} style={{ background: "#fff", borderRadius: 14, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 2px 10px rgba(0,0,0,.05)", border: "1px solid #f0f0f0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", color: s.role==="owner"?"#1a1a1a":"#fff", fontWeight: 900, fontSize: 14, flexShrink: 0 }}>
+                        {ini}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{name}</div>
+                        <div style={{ fontSize: 12, color: "#aaa" }}>{s.email}</div>
+                        {s.position && <div style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>{s.position} · {s.availability}</div>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: s.role==="manager"?"#e0f2fe":"#ede9fe", color: s.role==="manager"?"#0891b2":"#4f46e5" }}>
+                        {s.role}
+                      </span>
+                      <button onClick={() => handleDelete(id, name)} title="Remove" style={{ background: "none", border: "1px solid #fee2e2", color: "#dc2626", cursor: "pointer", fontSize: 13, padding: "4px 10px", borderRadius: 8, fontWeight: 700, fontFamily: "var(--font-body)" }}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
 
-          <div className="su-form-row">
-            <label className="su-label">Email</label>
-            <input className="su-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" />
+          <div style={{ marginTop: 14, background: "#f0f7ff", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#3b82f6", border: "1px solid #bfdbfe" }}>
+            💡 Staff log in at the <strong>Login page</strong> with their email and temporary password. They can update their password in their <strong>Profile</strong>.
           </div>
-          <div className="su-form-row">
-            <label className="su-label">Password</label>
-            <input className="su-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min 6 characters" />
-          </div>
-          <div className="su-form-row">
-            <label className="su-label">Position (optional)</label>
-            <input className="su-input" value={position} onChange={e=>setPosition(e.target.value)} placeholder="e.g. Waitstaff, Cook" />
-          </div>
-          <div className="su-form-row">
-            <label className="su-label">Availability</label>
-            <select className="su-input" value={availability} onChange={e=>setAvailability(e.target.value)}>
-              <option value="Full-Time">Full-Time</option>
-              <option value="Part-Time">Part-Time</option>
-              <option value="On-Call">On-Call</option>
-            </select>
-          </div>
-
-          <button className="su-btn su-btn-black" onClick={handleRegister} disabled={loading} style={{ width:"100%", marginTop:8 }}>
-            {loading ? <span className="spinner" /> : "Create Account"}
-          </button>
-
-          <p style={{ fontSize:13, textAlign:"center", marginTop:16 }}>
-            Already have an account?{" "}
-            <span style={{ color:"#f5b800", cursor:"pointer", fontWeight:700 }} onClick={onLoginClick}>Login</span>
-          </p>
         </div>
       </div>
     </div>
