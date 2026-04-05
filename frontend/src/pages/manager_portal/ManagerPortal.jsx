@@ -14,63 +14,16 @@ import EmployeeOverview  from "./EmployeeOverview";
 import TipManager        from "./TipManager";
 import RegisterStaff     from "./RegisterStaff";
 
-function Header({ view, setView, unreadCount, user, onProfile, onLogout }) {
-  const { t } = useLanguage();
-  const isOwner = user?.role === "owner";
-  const initials = `${user?.firstName?.[0]||""}${user?.lastName?.[0]||""}`.toUpperCase();
-
-  const nav = [
-    { key:"managerDash",      label: t("dashboard")        || "Dashboard"       },
-    { key:"managerSchedule",  label: t("schedule")         || "Schedule"        },
-    { key:"swapApprovals",    label: t("swapApprovals")    || "Swap Approvals", badge: unreadCount > 0 },
-    { key:"staffReport",      label: t("staffReports")     || "Staff Reports"   },
-    { key:"employeeOverview", label: t("employeeOverview") || "Overview"        },
-    ...(isOwner ? [{ key:"tipManager", label: t("tips") || "Tips" }] : []),
-    { key:"registerStaff", label: isOwner ? "Register Staff" : "Register Employee",
-      style:{ background: view==="registerStaff" ? "#f5b800" : "rgba(245,184,0,.15)", color: view==="registerStaff" ? "#1a1a1a" : "#f5b800", borderRadius:8, fontWeight:800 }
-    },
-  ];
-
-  return (
-    <header className="su-header">
-      <div className="su-brand">
-        <div className="su-logobox">UP</div>
-        {t("appName")}
-      </div>
-      <div className="su-nav">
-        {nav.map(({ key, label, badge, style: navStyle }) => (
-          <button
-            key={key}
-            className={`su-navbtn ${view===key?"active":""}`}
-            onClick={() => setView(key)}
-            style={navStyle || {}}
-          >
-            {badge ? <span className="su-badge-wrap">{label}<span className="su-badge-dot" /></span> : label}
-          </button>
-        ))}
-        <LanguageSwitcher light />
-        {/* Profile avatar */}
-        <button
-          onClick={onProfile}
-          title="My Profile"
-          style={{ width:36, height:36, borderRadius:"50%", background: user?.avatar ? "transparent":"#f5b800", border:"2px solid rgba(255,255,255,.3)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", padding:0, marginLeft:4 }}
-        >
-          {user?.avatar
-            ? <img src={user.avatar} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-            : <span style={{ fontWeight:900, fontSize:13, color:"#1a1a1a" }}>{initials}</span>
-          }
-        </button>
-        <button className="su-navbtn logout" onClick={onLogout}>{t("logout")||"Logout"}</button>
-      </div>
-    </header>
-  );
-}
-
 export default function ManagerPortal() {
   const { user, logout } = useAuth();
-  const [view,        setView]        = useState("managerDash");
-  const [pendingCount,setPendingCount]= useState(0);
-  const [showProfile, setShowProfile] = useState(false);
+  const { t }            = useLanguage();
+  const isOwner          = user?.role === "owner";
+
+  const [view,         setView]         = useState("managerDash");
+  const [pendingCount, setPendingCount] = useState(0);
+  const [showProfile,  setShowProfile]  = useState(false);
+
+  const initials = `${user?.firstName?.[0]||""}${user?.lastName?.[0]||""}`.toUpperCase();
 
   const fetchPendingCount = async () => {
     try { const res = await api.get("/swaps?status=pending"); setPendingCount(res.data.count || 0); } catch {}
@@ -81,6 +34,17 @@ export default function ManagerPortal() {
     const i = setInterval(fetchPendingCount, 30000);
     return () => clearInterval(i);
   }, []);
+
+  // Navigation items
+  const navItems = [
+    { key:"managerDash",      label: t("dashboard")        || "Dashboard"                        },
+    { key:"managerSchedule",  label: t("schedule")         || "Schedule"                         },
+    { key:"swapApprovals",    label: t("swapApprovals")    || "Swap Approvals", badge: pendingCount > 0 },
+    { key:"staffReport",      label: t("staffReports")     || "Staff Reports"                    },
+    { key:"employeeOverview", label: t("employeeOverview") || "Overview"                         },
+    ...(isOwner ? [{ key:"tipManager", label: t("tips") || "Tips" }] : []),
+    { key:"registerStaff",    label: isOwner ? "Register Staff" : "Register Employee", highlight: true },
+  ];
 
   const renderView = () => {
     switch (view) {
@@ -97,8 +61,59 @@ export default function ManagerPortal() {
 
   return (
     <div style={{ minHeight:"100vh", background:"#f0f0ec" }}>
-      <Header view={view} setView={setView} unreadCount={pendingCount} user={user} onProfile={() => setShowProfile(true)} onLogout={logout} />
+
+      {/* ── Header ── */}
+      <header className="su-header">
+        <div className="su-brand">
+          <div className="su-logobox">UP</div>
+          {t("appName")}
+        </div>
+
+        <div className="su-nav">
+          {navItems.map(({ key, label, badge, highlight }) => (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              className={`su-navbtn ${view===key ? "active" : ""}`}
+              style={highlight ? {
+                background:   view===key ? "#f5b800" : "rgba(245,184,0,.18)",
+                color:        view===key ? "#1a1a1a" : "#f5b800",
+                borderRadius: 8,
+                fontWeight:   800,
+                border:       "1px solid rgba(245,184,0,.4)",
+              } : {}}
+            >
+              {badge
+                ? <span className="su-badge-wrap">{label}<span className="su-badge-dot" /></span>
+                : label
+              }
+            </button>
+          ))}
+
+          <LanguageSwitcher light />
+
+          {/* Profile avatar button */}
+          <button
+            onClick={() => setShowProfile(true)}
+            title="My Profile"
+            style={{ width:36, height:36, borderRadius:"50%", background: user?.avatar ? "transparent":"#f5b800", border:"2px solid rgba(255,255,255,.3)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", padding:0, marginLeft:4, flexShrink:0 }}
+          >
+            {user?.avatar
+              ? <img src={user.avatar} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              : <span style={{ fontWeight:900, fontSize:13, color:"#1a1a1a" }}>{initials}</span>
+            }
+          </button>
+
+          <button className="su-navbtn logout" onClick={logout}>
+            {t("logout") || "Logout"}
+          </button>
+        </div>
+      </header>
+
+      {/* ── View ── */}
       {renderView()}
+
+      {/* ── Profile modal ── */}
       {showProfile && <ProfileCard onClose={() => setShowProfile(false)} />}
     </div>
   );
