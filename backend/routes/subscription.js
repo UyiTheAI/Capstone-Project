@@ -55,14 +55,26 @@ router.post("/setup-intent", async (req, res) => {
       ? existing.data[0]
       : await stripe.customers.create({ email, name: `${firstName||""} ${lastName||""}`.trim() });
 
-    // Create SetupIntent — saves card without charging
+    // Cancel any existing incomplete SetupIntents for this customer to avoid stale intent errors
+    try {
+      const existingSIs = await stripe.setupIntents.list({ customer: customer.id, limit: 5 });
+      for (const si of existingSIs.data) {
+        if (si.status === "requires_payment_method" || si.status === "requires_confirmation") {
+          await stripe.setupIntents.cancel(si.id);
+        }
+      }
+    } catch (cancelErr) {
+      console.log("Could not cancel old SetupIntents:", cancelErr.message);
+    }
+
+    // Create fresh SetupIntent
     const setupIntent = await stripe.setupIntents.create({
       customer:             customer.id,
       payment_method_types: ["card"],
       usage:                "off_session",
     });
 
-    res.json({ success: true, clientSecret: setupIntent.client_secret, customerId: customer.id });
+    res.json({ success: true, clientSecret: setupIntent.client_secret, customerId: customer.id, setupIntentId: setupIntent.id });
   } catch (err) {
     console.error("Setup intent error:", err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -77,7 +89,7 @@ router.post("/register-and-activate", async (req, res) => {
     if (!stripe) return res.status(400).json({ success: false, message: "Stripe not configured" });
     if (!process.env.STRIPE_PRICE_ID) return res.status(400).json({ success: false, message: "STRIPE_PRICE_ID not set" });
 
-    const { firstName, lastName, email, password, customerId, paymentMethodId } = req.body;
+    const { firstName, lastName, email, password, customerId, paymentMethodId, setupIntentId } = req.body;
     if (!firstName || !lastName || !email || !password)
       return res.status(400).json({ success: false, message: "All fields required" });
     if (!customerId)
@@ -86,10 +98,33 @@ router.post("/register-and-activate", async (req, res) => {
     if (await User.findOne({ email }))
       return res.status(400).json({ success: false, message: "Email already registered. Please sign in." });
 
-    // Set default payment method on customer
-    if (paymentMethodId) {
+    // Get the actual payment method — retrieve from setupIntent if available
+    let finalPaymentMethodId = paymentMethodId;
+
+    if (setupIntentId) {
+      try {
+        const si = await stripe.setupIntents.retrieve(setupIntentId);
+        if (si.payment_method) finalPaymentMethodId = si.payment_method;
+      } catch (err) {
+        console.log("Could not retrieve setupIntent:", err.message);
+      }
+    }
+
+    // Attach payment method to customer (if not already attached)
+    if (finalPaymentMethodId) {
+      try {
+        await stripe.paymentMethods.attach(finalPaymentMethodId, { customer: customerId });
+        console.log(`✅ Payment method ${finalPaymentMethodId} attached to ${customerId}`);
+      } catch (attachErr) {
+        // Already attached is fine — continue
+        if (!attachErr.message?.includes("already been attached")) {
+          console.error("Attach error:", attachErr.message);
+          // Don't throw — subscription will still work if pm exists on customer
+        }
+      }
+      // Set as default payment method on customer
       await stripe.customers.update(customerId, {
-        invoice_settings: { default_payment_method: paymentMethodId },
+        invoice_settings: { default_payment_method: finalPaymentMethodId },
       });
     }
 
