@@ -113,28 +113,28 @@ GOOGLE_CLIENT_ID=from_google_cloud_console
 GOOGLE_CLIENT_SECRET=from_google_cloud_console
 GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
 
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_ID=price_...
+STRIPE_SECRET_KEY=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
+STRIPE_WEBHOOK_SECRET=whsec_kFslEnBhgSUlLpPGK0JJzawvuY0dY0DS
+STRIPE_PRICE_ID=price_1TIAygRpyU2rhUpUBJkTfBTQ
 
-EMAIL_USER=your@gmail.com
-EMAIL_PASS=16-char-gmail-app-password
+
 ```
 
 ### Frontend (`frontend/.env`)
 
 ```env
 REACT_APP_API_URL=http://localhost:5000/api
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_...
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_51THoHnRpyU2rhUpUlGnbMztzZHSjELvdxvwdW8SsaeOdIlU4Eu98aSy2nykX24ipcNZgCKIxrwrVUkBznRtVIonL000e9ZIvhD
+
 ```
 
 ### Production (Render + Netlify)
 
 **Render env vars:**
 ```
-STRIPE_SECRET_KEY     = sk_live_...
+STRIPE_SECRET_KEY     = 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
 STRIPE_PRICE_ID       = price_1TIAygRpyU2rhUpUBJkTfBTQ
-STRIPE_WEBHOOK_SECRET = whsec_...
+STRIPE_WEBHOOK_SECRET = whsec_kFslEnBhgSUlLpPGK0JJzawvuY0dY0DS
 FRONTEND_URL          = https://shift-up.netlify.app
 NODE_ENV              = production
 ```
@@ -142,7 +142,7 @@ NODE_ENV              = production
 **Netlify env vars:**
 ```
 REACT_APP_API_URL                = https://capstone-project-4-w5io.onrender.com/api
-REACT_APP_STRIPE_PUBLISHABLE_KEY = pk_live_...
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_51THoHnRpyU2rhUpUlGnbMztzZHSjELvdxvwdW8SsaeOdIlU4Eu98aSy2nykX24ipcNZgCKIxrwrVUkBznRtVIonL000e9ZIvhD
 ```
 
 ---
@@ -315,3 +315,4 @@ Capstone-Project/
 ## 👨‍💻 Author
 
 **Henil Patel** — Capstone Project, Semester 6
+**Omoruyi Oredia** — Capstone Project, Semester 6
