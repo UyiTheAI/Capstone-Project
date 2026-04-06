@@ -132,7 +132,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_51THoHnRpyU2rhUpUlGnbMztzZHSjELvdxvwdW8
 
 **Render env vars:**
 ```
-STRIPE_SECRET_KEY     = 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
+STRIPE_SECRET_KEY     = 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
 STRIPE_PRICE_ID       = price_1TIAygRpyU2rhUpUBJkTfBTQ
 STRIPE_WEBHOOK_SECRET = whsec_kFslEnBhgSUlLpPGK0JJzawvuY0dY0DS
 FRONTEND_URL          = https://shift-up.netlify.app
@@ -142,7 +142,7 @@ NODE_ENV              = production
 **Netlify env vars:**
 ```
 REACT_APP_API_URL                = https://capstone-project-4-w5io.onrender.com/api
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_51THoHnRpyU2rhUpUlGnbMztzZHSjELvdxvwdW8SsaeOdIlU4Eu98aSy2nykX24ipcNZgCKIxrwrVUkBznRtVIonL000e9ZIvhD
+REACT_APP_STRIPE_PUBLISHABLE_KEY=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
 ```
 
 ---

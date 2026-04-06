@@ -86,6 +86,7 @@ app.use("/api/notifications", require("./routes/notifications"));
 app.use("/api/users",         require("./routes/users"));
 app.use("/api/dashboard",     require("./routes/dashboard"));
 app.use("/api/tips",          require("./routes/tips"));
+app.use("/api/attendance",    require("./routes/attendance"));
 app.use("/api/subscription",  require("./routes/subscription"));
 
 // ── Health check ───────────────────────────────────────────────────────────
