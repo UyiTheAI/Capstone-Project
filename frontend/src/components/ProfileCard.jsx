@@ -3,6 +3,14 @@ import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import ChangePassword from "./ChangePassword";
 
+// Safe date formatter — returns "—" for invalid/epoch dates
+const fmtDate = (val) => {
+  if (!val) return "—";
+  const d = new Date(val);
+  if (isNaN(d.getTime()) || d.getFullYear() < 2020) return "—";
+  return d.toLocaleDateString("en-CA", { year:"numeric", month:"long", day:"numeric" });
+};
+
 export default function ProfileCard({ onClose }) {
   const { user, updateUser, logout } = useAuth();
   const [tab,          setTab]          = useState("profile");
@@ -207,7 +215,7 @@ export default function ProfileCard({ onClose }) {
                       <div>
                         <div style={{ fontSize:11, color:"#aaa", textTransform:"uppercase", letterSpacing:.5 }}>Trial Ends</div>
                         <div style={{ fontSize:13, fontWeight:700, color:"#1a1a1a", marginTop:2 }}>
-                          {new Date(subStatus.subscription.trialEnd).toLocaleDateString("en-CA", { year:"numeric", month:"long", day:"numeric" })}
+                          {fmtDate(subStatus.subscription.trialEnd)}
                         </div>
                       </div>
                     )}
@@ -216,12 +224,12 @@ export default function ProfileCard({ onClose }) {
                         {subStatus.trial?"First Charge":"Next Billing"}
                       </div>
                       <div style={{ fontSize:13, fontWeight:700, color:"#1a1a1a", marginTop:2 }}>
-                        {new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("en-CA", { year:"numeric", month:"long", day:"numeric" })}
+                        {fmtDate(subStatus.subscription.currentPeriodEnd)}
                       </div>
                     </div>
                     {subStatus.subscription.cancelAtEnd && (
                       <div style={{ gridColumn:"1/-1", background:"#fff8e1", border:"1px solid #ffe082", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#92400e" }}>
-                        ⚠️ Subscription will end on {new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString()}
+                        ⚠️ Subscription will end on {fmtDate(subStatus.subscription.currentPeriodEnd)}
                       </div>
                     )}
                   </div>
