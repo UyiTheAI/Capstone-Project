@@ -1,124 +1,77 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
 
-const LANG_CODES = { en: "EN", es: "ES", fr: "FR", pt: "PT", hi: "हि", ja: "日", zh: "中", mr: "म", ko: "한" };
-
-const LANG_FONTS_MAP = {
-  hi: "'Noto Sans Devanagari', sans-serif",
-  mr: "'Noto Sans Devanagari', sans-serif",
-  ja: "'Noto Sans JP', sans-serif",
-  zh: "'Noto Sans SC', sans-serif",
-  ko: "'Noto Sans KR', sans-serif",
-};
+const CODES = { en:"EN",fr:"FR",zh:"中",hi:"हि",es:"ES",tl:"TL",ar:"ع" };
 
 export default function LanguageSwitcher({ light = false }) {
-  const { lang, setLang, languages, fontConfig } = useLanguage();
+  const { lang, setLang, languages, translating } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef();
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const current  = languages[lang];
-  const code     = LANG_CODES[lang] || lang.toUpperCase();
+  const cur  = languages[lang] || languages.en;
+  const code = CODES[lang] || lang.toUpperCase();
 
   return (
-    <div ref={ref} style={{ position: "relative", userSelect: "none" }}>
-
-      {/* ── Trigger ── */}
+    <div ref={ref} style={{ position:"relative", userSelect:"none", flexShrink:0 }}>
       <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: "flex", alignItems: "center", gap: 7,
-          background: light ? "rgba(255,255,255,.15)" : "#f0f0ec",
-          border: light ? "1px solid rgba(255,255,255,.2)" : "1px solid transparent",
-          borderRadius: 8, padding: "5px 11px",
-          cursor: "pointer", color: light ? "#fff" : "#1a1a1a",
-          fontWeight: 700, fontSize: 12, lineHeight: 1,
-          fontFamily: "var(--font-body)",
-        }}
-      >
-        <span style={{
-          background: light ? "rgba(255,255,255,.25)" : "#1a1a1a",
-          color: light ? "#fff" : "#f5b800",
-          borderRadius: 5, padding: "2px 6px",
-          fontSize: 10, fontWeight: 800, letterSpacing: .3,
-          minWidth: 24, textAlign: "center",
-          fontFamily: "'DM Sans', sans-serif", // badge always in Latin
-        }}>
-          {code}
-        </span>
-        <span style={{ fontFamily: "var(--font-body)" }}>{current.lang}</span>
-        <span style={{ fontSize: 9, opacity: .5 }}>▼</span>
+        onClick={() => !translating && setOpen(o=>!o)}
+        disabled={translating}
+        style={{ display:"flex", alignItems:"center", gap:7, background:light?"rgba(255,255,255,.15)":"#f0f0ec", border:light?"1px solid rgba(255,255,255,.2)":"1px solid transparent", borderRadius:8, padding:"6px 12px", cursor:translating?"not-allowed":"pointer", color:light?"#fff":"#1a1a1a", fontFamily:"var(--font-body)", fontSize:12, fontWeight:700, opacity:translating?.7:1, transition:"all .15s" }}>
+        {translating ? (
+          <>
+            <span style={{ width:12,height:12,border:`2px solid ${light?"#fff":"#f5b800"}`,borderTopColor:"transparent",borderRadius:"50%",animation:"ls .7s linear infinite",display:"inline-block" }} />
+            <span style={{ fontFamily:"'DM Sans',sans-serif",fontSize:11 }}>Translating…</span>
+            <style>{`@keyframes ls{to{transform:rotate(360deg)}}`}</style>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize:16 }}>{cur.flag}</span>
+            <span style={{ fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>{cur.lang}</span>
+            <span style={{ fontSize:9,opacity:.4,marginLeft:2 }}>▾</span>
+          </>
+        )}
       </button>
 
-      {/* ── Dropdown ── */}
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0,
-          background: "#fff", borderRadius: 14, minWidth: 180,
-          boxShadow: "0 12px 40px rgba(0,0,0,.18)", zIndex: 9999,
-          overflow: "hidden", border: "1px solid #f0f0ec",
-        }}>
-          <div style={{
-            padding: "8px 16px 6px", fontSize: 10, fontWeight: 700,
-            color: "#aaa", textTransform: "uppercase", letterSpacing: 1,
-            borderBottom: "1px solid #f5f5f5",
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            Language
+      {open && !translating && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{ position:"fixed",inset:0,zIndex:498 }} />
+          <div style={{ position:"absolute",top:"calc(100% + 8px)",right:0,background:"#fff",borderRadius:14,minWidth:220,boxShadow:"0 16px 48px rgba(0,0,0,.16)",zIndex:499,overflow:"hidden",border:"1px solid #f0f0ec" }}>
+
+            {/* Header */}
+            <div style={{ padding:"12px 16px 8px",background:"#f9f9f7",borderBottom:"1px solid #f0f0ec" }}>
+              <div style={{ fontSize:11,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:1,fontFamily:"'DM Sans',sans-serif" }}>🍁 Canadian Languages</div>
+            </div>
+
+            {Object.entries(languages).map(([code, data]) => {
+              const active = lang === code;
+              return (
+                <button key={code}
+                  onClick={() => { setLang(code); setOpen(false); }}
+                  style={{ width:"100%",display:"flex",alignItems:"center",gap:12,padding:"11px 16px",border:"none",borderBottom:"1px solid #f9f9f7",cursor:"pointer",textAlign:"left",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:active?700:500,background:active?"#1a1a1a":"#fff",color:active?"#f5b800":"#333",transition:"background .12s" }}
+                  onMouseEnter={e=>{if(!active)e.currentTarget.style.background="#f9f9f7";}}
+                  onMouseLeave={e=>{if(!active)e.currentTarget.style.background="#fff";}}>
+                  <span style={{ fontSize:20,flexShrink:0 }}>{data.flag}</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ fontWeight:active?700:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{data.lang}</div>
+                    {data.label && <div style={{ fontSize:11,color:active?"#f5b800aa":"#aaa",marginTop:1 }}>{data.label}</div>}
+                  </div>
+                  {active && <span style={{ fontSize:14,flexShrink:0 }}>✓</span>}
+                  {!active && data.isAWS && <span style={{ fontSize:9,color:"#ccc",background:"#f5f5f5",padding:"2px 6px",borderRadius:4,flexShrink:0,fontFamily:"'DM Sans',sans-serif" }}>AWS</span>}
+                </button>
+              );
+            })}
+
+            <div style={{ padding:"8px 16px",fontSize:10,color:"#ccc",fontFamily:"'DM Sans',sans-serif",textAlign:"center",borderTop:"1px solid #f0f0ec" }}>
+              Powered by AWS Translate
+            </div>
           </div>
-
-          {Object.entries(languages).map(([code, data], i, arr) => {
-            const isActive  = lang === code;
-            const shortCode = LANG_CODES[code] || code.toUpperCase();
-            return (
-              <button
-                key={code}
-                onClick={() => { setLang(code); setOpen(false); }}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 16px", border: "none",
-                  borderBottom: i < arr.length - 1 ? "1px solid #f5f5f5" : "none",
-                  cursor: "pointer", textAlign: "left",
-                  background: isActive ? "#f5b800" : "#fff",
-                  color: isActive ? "#1a1a1a" : "#333",
-                  fontWeight: isActive ? 800 : 500,
-                  fontSize: 13, transition: "background .12s",
-                }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#fafaf8"; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "#fff"; }}
-              >
-                {/* Code badge — always Latin font */}
-                <span style={{
-                  background: isActive ? "rgba(0,0,0,.15)" : "#f0f0ec",
-                  color: isActive ? "#1a1a1a" : "#666",
-                  borderRadius: 5, padding: "2px 6px",
-                  fontSize: 10, fontWeight: 800,
-                  minWidth: 28, textAlign: "center",
-                  fontFamily: "'DM Sans', sans-serif",
-                  letterSpacing: .3,
-                }}>
-                  {shortCode}
-                </span>
-
-                {/* Language name — in its own font */}
-                <span style={{ flex: 1, fontFamily: LANG_FONTS_MAP[code] || "'DM Sans', sans-serif" }}>
-                  {data.lang}
-                </span>
-
-                {isActive && (
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1a1a1a" }}>✓</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        </>
       )}
     </div>
   );

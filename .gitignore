@@ -7,5 +7,5 @@ backend/node_modules/
 backend/.env
 .env
 frontend/.env
-backend/.env.examplebackend/.env
+backend/.env.example
 frontend/.env

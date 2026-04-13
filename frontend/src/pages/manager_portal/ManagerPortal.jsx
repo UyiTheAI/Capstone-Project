@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import api from "../../api";
 import "../../App.css";
-import LanguageSwitcher from "../../components/LanguageSwitcher";
-import ProfileCard from "../../components/ProfileCard";
-
+import PortalLayout from "../../components/PortalLayout";
 import ManagerDashboard  from "./ManagerDashboard";
 import ManagerSchedule   from "./ManagerSchedule";
 import SwapApprovals     from "./SwapApprovals";
@@ -15,99 +13,84 @@ import TipManager        from "./TipManager";
 import RegisterStaff     from "./RegisterStaff";
 
 export default function ManagerPortal() {
-  const { user, logout } = useAuth();
+  const { user }         = useAuth();
   const { t }            = useLanguage();
-  const isOwner          = user?.role === "owner";
+  const [view,          setView]          = useState("dashboard");
+  const [pending,       setPending]       = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [unread,        setUnread]        = useState(0);
+  const isOwner = user?.role==="owner";
 
-  const [view,         setView]         = useState("managerDash");
-  const [pendingCount, setPendingCount] = useState(0);
-  const [showProfile,  setShowProfile]  = useState(false);
+  const fetchPending = useCallback(async () => {
+    try { const r=await api.get("/swaps?status=pending"); setPending(r.data.count||0); } catch {}
+  },[]);
 
-  const initials = `${user?.firstName?.[0]||""}${user?.lastName?.[0]||""}`.toUpperCase();
-
-  const fetchPendingCount = async () => {
-    try { const res = await api.get("/swaps?status=pending"); setPendingCount(res.data.count || 0); } catch {}
-  };
+  const fetchNotifs = useCallback(async () => {
+    try {
+      const r=await api.get("/notifications");
+      const ns=r.data.notifications||[];
+      setNotifications(ns); setUnread(ns.filter(n=>!n.read).length);
+    } catch {}
+  },[]);
 
   useEffect(() => {
-    fetchPendingCount();
-    const i = setInterval(fetchPendingCount, 30000);
-    return () => clearInterval(i);
-  }, []);
+    fetchPending(); fetchNotifs();
+    const id=setInterval(()=>{fetchPending();fetchNotifs();},30000);
+    return ()=>clearInterval(id);
+  },[fetchPending,fetchNotifs]);
 
-  // Navigation items
-  const navItems = [
-    { key:"managerDash",      label: t("dashboard")        || "Dashboard"                        },
-    { key:"managerSchedule",  label: t("schedule")         || "Schedule"                         },
-    { key:"swapApprovals",    label: t("swapApprovals")    || "Swap Approvals", badge: pendingCount > 0 },
-    { key:"staffReport",      label: t("staffReports")     || "Staff Reports"                    },
-    { key:"employeeOverview", label: t("employeeOverview") || "Overview"                         },
-    ...(isOwner ? [{ key:"tipManager", label: t("tips") || "Tips" }] : []),
-    { key:"registerStaff",    label: isOwner ? "Register Staff" : "Register Employee" },
+  const markRead = async (id) => {
+    try { await api.put(`/notifications/${id}/read`); setNotifications(p=>p.map(n=>n._id===id?{...n,read:true}:n)); setUnread(p=>Math.max(0,p-1)); } catch {}
+  };
+  const markAllRead = async () => {
+    try { await api.put("/notifications/read-all"); setNotifications(p=>p.map(n=>({...n,read:true}))); setUnread(0); } catch {}
+  };
+
+  const navSections = [
+    { title:"Overview", items:[
+      { key:"dashboard",     label:t("dashboard")        },
+      { key:"schedule",      label:t("schedule")          },
+      { key:"employees",     label:t("employeeOverview")  },
+    ]},
+    { title:"Operations", items:[
+      { key:"swapApprovals", label:t("swapApprovals"), badge:pending },
+      { key:"staffReports",  label:t("staffReports")      },
+      ...(isOwner?[{ key:"tips", label:t("tips") }]:[]),
+    ]},
+    { title:"Team", items:[
+      { key:"register", label:isOwner?t("registerStaff"):t("registerEmployee") },
+    ]},
   ];
 
-  const renderView = () => {
-    switch (view) {
-      case "managerDash":      return <ManagerDashboard user={user} onGoToSwaps={() => setView("swapApprovals")} />;
-      case "managerSchedule":  return <ManagerSchedule user={user} />;
-      case "swapApprovals":    return <SwapApprovals user={user} onUpdate={fetchPendingCount} />;
-      case "staffReport":      return <StaffReport />;
-      case "employeeOverview": return <EmployeeOverview />;
-      case "tipManager":       return <TipManager />;
-      case "registerStaff":    return <RegisterStaff />;
-      default:                 return null;
-    }
+  const topbarActions = (
+    <>
+      {pending>0&&view!=="swapApprovals"&&<button className="pl-qbtn danger" onClick={()=>setView("swapApprovals")}>{pending} {t("pending")}</button>}
+      {view!=="schedule"&&<button className="pl-qbtn" onClick={()=>setView("schedule")}>{t("schedule")}</button>}
+    </>
+  );
+
+  const views = {
+    dashboard:    <ManagerDashboard  user={user} onGoToSwaps={()=>setView("swapApprovals")} />,
+    schedule:     <ManagerSchedule   user={user} />,
+    swapApprovals:<SwapApprovals     user={user} onUpdate={fetchPending} />,
+    staffReports: <StaffReport />,
+    employees:    <EmployeeOverview />,
+    tips:         <TipManager />,
+    register:     <RegisterStaff isOwner={isOwner} />,
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#f0f0ec" }}>
-
-      {/* ── Header ── */}
-      <header className="su-header">
-        <div className="su-brand">
-          <div className="su-logobox">UP</div>
-          {t("appName")}
-        </div>
-
-        <div className="su-nav">
-          {navItems.map(({ key, label, badge }) => (
-            <button
-              key={key}
-              onClick={() => setView(key)}
-              className={`su-navbtn ${view===key ? "active" : ""}`}
-            >
-              {badge
-                ? <span className="su-badge-wrap">{label}<span className="su-badge-dot" /></span>
-                : label
-              }
-            </button>
-          ))}
-
-          <LanguageSwitcher light />
-
-          {/* Profile avatar button */}
-          <button
-            onClick={() => setShowProfile(true)}
-            title="My Profile"
-            style={{ width:36, height:36, borderRadius:"50%", background: user?.avatar ? "transparent":"#f5b800", border:"2px solid rgba(255,255,255,.3)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", padding:0, marginLeft:4, flexShrink:0 }}
-          >
-            {user?.avatar
-              ? <img src={user.avatar} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-              : <span style={{ fontWeight:900, fontSize:13, color:"#1a1a1a" }}>{initials}</span>
-            }
-          </button>
-
-          <button className="su-navbtn logout" onClick={logout}>
-            {t("logout") || "Logout"}
-          </button>
-        </div>
-      </header>
-
-      {/* ── View ── */}
-      {renderView()}
-
-      {/* ── Profile modal ── */}
-      {showProfile && <ProfileCard onClose={() => setShowProfile(false)} />}
-    </div>
+    <PortalLayout
+      portalLabel={isOwner?t("ownerPortal")+" Portal":t("managerPortal")+" Portal"}
+      navSections={navSections}
+      view={view} setView={setView}
+      topbarActions={topbarActions}
+      notifications={notifications}
+      unreadCount={unread}
+      onMarkRead={markRead}
+      onMarkAllRead={markAllRead}
+    >
+      {views[view]||null}
+    </PortalLayout>
   );
 }
