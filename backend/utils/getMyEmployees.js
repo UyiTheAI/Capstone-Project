@@ -13,7 +13,6 @@ const findRootOwner = async (userId) => {
 
 /**
  * Get all employee IDs in the same org as the given user.
- * - Traces up to root owner, then gets all employees under that owner.
  */
 const getOrgEmployeeIds = async (userId) => {
   const user = await User.findById(userId).select("role createdBy orgOwner");
@@ -27,59 +26,74 @@ const getOrgEmployeeIds = async (userId) => {
   }
   if (!rootOwnerId) return [];
 
-  // Get all users in this org (whose orgOwner = rootOwnerId OR who IS the owner)
-  const orgUsers = await User.find({
-    $or: [
-      { orgOwner: rootOwnerId, role: "employee" },
-      { _id: rootOwnerId, role: "owner" },
-    ],
-    role: "employee",
-  }).select("_id");
-
-  // Also get employees directly created by owner
-  const direct = await User.find({ createdBy: rootOwnerId, role: "employee" }).select("_id");
-
-  // Get managers under owner and their employees
-  const managers = await User.find({ createdBy: rootOwnerId, role: "manager" }).select("_id");
-  const indirect = managers.length > 0
-    ? await User.find({ createdBy: { $in: managers.map(m=>m._id) }, role: "employee" }).select("_id")
+  const orgUsers  = await User.find({ orgOwner: rootOwnerId, role: "employee" }).select("_id");
+  const direct    = await User.find({ createdBy: rootOwnerId, role: "employee" }).select("_id");
+  const managers  = await User.find({ createdBy: rootOwnerId, role: "manager" }).select("_id");
+  const indirect  = managers.length > 0
+    ? await User.find({ createdBy: { $in: managers.map(m => m._id) }, role: "employee" }).select("_id")
     : [];
 
-  const all = [...direct, ...indirect, ...orgUsers];
+  const all    = [...direct, ...indirect, ...orgUsers];
   const unique = [...new Map(all.map(u => [u._id.toString(), u._id])).values()];
   return unique;
 };
 
 /**
- * Get all employee IDs visible to the current manager/owner for scheduling.
- * - Owner: own employees + employees of their managers
- * - Manager: only their direct employees
+ * Get all employee IDs a manager/owner can act on.
+ *
+ * Owner  → direct employees + all employees under their managers
+ * Manager → their direct employees + employees created by their org owner
+ *           (so manager can schedule/attend/tip anyone in the same org)
  */
 const getMyEmployeeIds = async (userId, userRole) => {
   if (userRole === "owner") {
-    const direct = await User.find({ createdBy: userId, role: "employee" }).select("_id");
+    const direct   = await User.find({ createdBy: userId, role: "employee" }).select("_id");
     const managers = await User.find({ createdBy: userId, role: "manager" }).select("_id");
     const indirect = managers.length > 0
-      ? await User.find({ createdBy: { $in: managers.map(m=>m._id) }, role: "employee" }).select("_id")
+      ? await User.find({ createdBy: { $in: managers.map(m => m._id) }, role: "employee" }).select("_id")
       : [];
     const all = [...direct, ...indirect];
     return [...new Map(all.map(u => [u._id.toString(), u._id])).values()];
   }
-  // Manager
-  const direct = await User.find({ createdBy: userId, role: "employee" }).select("_id");
-  return direct.map(u => u._id);
+
+  // Manager: own employees + employees created by the org owner
+  const mgr          = await User.findById(userId).select("orgOwner createdBy");
+  const orgOwnerId   = mgr?.orgOwner || mgr?.createdBy;
+  const myEmployees  = await User.find({ createdBy: userId, role: "employee" }).select("_id");
+  const ownerEmpoyees = orgOwnerId
+    ? await User.find({ createdBy: orgOwnerId, role: "employee" }).select("_id")
+    : [];
+
+  const all = [...myEmployees, ...ownerEmpoyees];
+  return [...new Map(all.map(u => [u._id.toString(), u._id])).values()];
 };
 
 /**
- * Get all org user IDs (managers + employees) under current user.
+ * Get all org user IDs (managers + employees) a manager/owner can act on.
+ *
+ * Owner   → everyone they created + those created by their managers
+ * Manager → their own employees + org owner's employees
  */
 const getMyOrgUserIds = async (userId, userRole) => {
-  const direct = await User.find({ createdBy: userId }).select("_id role");
-  const directIds = direct.map(u => u._id);
-  const mgrIds    = direct.filter(u => u.role === "manager").map(u => u._id);
-  if (userRole !== "owner" || !mgrIds.length) return directIds;
-  const indirect = await User.find({ createdBy: { $in: mgrIds } }).select("_id");
-  return [...directIds, ...indirect.map(u=>u._id)];
+  if (userRole === "owner") {
+    const direct   = await User.find({ createdBy: userId }).select("_id role");
+    const directIds = direct.map(u => u._id);
+    const mgrIds    = direct.filter(u => u.role === "manager").map(u => u._id);
+    if (!mgrIds.length) return directIds;
+    const indirect  = await User.find({ createdBy: { $in: mgrIds } }).select("_id");
+    return [...directIds, ...indirect.map(u => u._id)];
+  }
+
+  // Manager: own created users + org owner's employees
+  const mgr           = await User.findById(userId).select("orgOwner createdBy");
+  const orgOwnerId    = mgr?.orgOwner || mgr?.createdBy;
+  const myCreated     = await User.find({ createdBy: userId }).select("_id");
+  const ownerEmployees = orgOwnerId
+    ? await User.find({ createdBy: orgOwnerId, role: "employee" }).select("_id")
+    : [];
+
+  const all = [...myCreated, ...ownerEmployees];
+  return [...new Map(all.map(u => [u._id.toString(), u._id])).values()];
 };
 
 module.exports = { getMyEmployeeIds, getMyOrgUserIds, getOrgEmployeeIds, findRootOwner };

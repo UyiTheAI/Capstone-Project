@@ -300,7 +300,7 @@ export default function Home({ onGetStarted, onLoginClick }) {
             <p className="contact-left-sub">{t("contactSubtitle")}</p>
             <div className="contact-meta">
               <div className="contact-meta-row"><div className="contact-meta-dot"/><span>{t("contactMetaReply")}</span></div>
-              <div className="contact-meta-row"><div className="contact-meta-dot"/><span>support@shiftup.ca</span></div>
+              <div className="contact-meta-row"><div className="contact-meta-dot"/><span>shiftupadmin@gmail.com</span></div>
               <div className="contact-meta-row"><div className="contact-meta-dot"/><span>{t("contactMetaHours")}</span></div>
             </div>
           </div>

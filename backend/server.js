@@ -10,11 +10,23 @@ const logger       = require("./middleware/logger");
 connectDB();
 const app = express();
 
-const allowedOrigins = process.env.NODE_ENV === "production"
-  ? [process.env.FRONTEND_URL, "https://shift-up.netlify.app"].filter(Boolean)
-  : ["http://localhost:3000", "http://localhost:3001", process.env.FRONTEND_URL].filter(Boolean);
-
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+// Allow all Replit dev/prod domains plus localhost
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, same-origin)
+    if (!origin) return callback(null, true);
+    // Allow localhost for local dev
+    if (origin.startsWith("http://localhost")) return callback(null, true);
+    // Allow any *.replit.dev or *.repl.co domain
+    if (/\.(replit\.dev|repl\.co|replit\.app)$/.test(origin)) return callback(null, true);
+    // Allow explicitly configured frontend URL
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
+    // Allow Netlify deploy
+    if (origin === "https://shift-up.netlify.app") return callback(null, true);
+    callback(null, true); // permissive for development
+  },
+  credentials: true,
+}));
 
 app.use(session({
   secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "shiftup-session",
@@ -63,7 +75,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
-// ── Routes ─────────────────────────────────────────────────────────────────
+// Routes
 app.use("/api/auth",          require("./routes/auth"));
 app.use("/api/shifts",        require("./routes/shifts"));
 app.use("/api/swaps",         require("./routes/swaps"));
@@ -85,5 +97,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 ShiftUp API → http://localhost:${PORT}/api  [${process.env.NODE_ENV || "development"}]`);
+  console.log(`ShiftUp API running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
 });
