@@ -106,7 +106,11 @@ export default function PortalLayout({ portalLabel, navSections, view, setView, 
 
           <div className="pl-foot">
             <button className="pl-user" onClick={()=>setShowProfile(true)}>
-              <div className="pl-ava" style={{ background:rc,color:rt }}>{initials}</div>
+              <div className="pl-ava" style={{ background:rc,color:rt,overflow:"hidden" }}>
+                {user?.avatar
+                  ? <img src={user.avatar} alt="" style={{ width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%" }} />
+                  : initials}
+              </div>
               <div style={{ minWidth:0,flex:1 }}>
                 <div className="pl-uname">{uname}</div>
                 <div className="pl-urole">
@@ -190,8 +194,10 @@ export default function PortalLayout({ portalLabel, navSections, view, setView, 
 
               {/* Avatar */}
               <button onClick={()=>setShowProfile(true)}
-                style={{ width:36,height:36,borderRadius:"50%",background:rc,border:"2px solid #e5e5e5",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:rt,cursor:"pointer",flexShrink:0 }}>
-                {initials}
+                style={{ width:36,height:36,borderRadius:"50%",background:rc,border:"2px solid #e5e5e5",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:rt,cursor:"pointer",flexShrink:0,overflow:"hidden",padding:0 }}>
+                {user?.avatar
+                  ? <img src={user.avatar} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }} />
+                  : initials}
               </button>
             </div>
           </header>

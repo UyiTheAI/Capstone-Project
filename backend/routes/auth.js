@@ -43,6 +43,7 @@ router.post("/register", async (req, res) => {
         role: user.role,
         position: user.position,
         availability: user.availability,
+        avatar: user.avatar || null,
       },
     });
   } catch (err) {
@@ -87,6 +88,7 @@ router.post("/login", async (req, res) => {
         role: user.role,
         position: user.position,
         availability: user.availability,
+        avatar: user.avatar || null,
       },
     });
   } catch (err) {
@@ -112,6 +114,7 @@ router.get("/me", protect, async (req, res) => {
       noShows: user.noShows,
       coveragePercent: user.coveragePercent,
       lastAttendance: user.lastAttendance,
+      avatar: user.avatar || null,
     },
   });
 });
@@ -119,15 +122,54 @@ router.get("/me", protect, async (req, res) => {
 // ── PUT /api/auth/me ──────────────────────────────────────────────────────
 router.put("/me", protect, async (req, res) => {
   try {
-    const { firstName, lastName, position, availability, availabilitySchedule } = req.body;
+    const { firstName, lastName, position, availability, availabilitySchedule, avatar } = req.body;
+    const updateFields = { firstName, lastName, position, availability, availabilitySchedule };
+    // Only update avatar if provided (allows clearing by sending null)
+    if (avatar !== undefined) updateFields.avatar = avatar;
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { firstName, lastName, position, availability, availabilitySchedule },
+      updateFields,
       { new: true, runValidators: true }
     );
-    res.json({ success: true, user });
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        position: user.position,
+        availability: user.availability,
+        availabilitySchedule: user.availabilitySchedule,
+        avatar: user.avatar || null,
+      },
+    });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// ── PUT /api/auth/change-password ─────────────────────────────────────────
+router.put("/change-password", protect, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ success: false, message: "Current and new password required" });
+    if (newPassword.length < 6)
+      return res.status(400).json({ success: false, message: "New password must be at least 6 characters" });
+
+    const user = await User.findById(req.user._id).select("+password");
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch)
+      return res.status(401).json({ success: false, message: "Current password is incorrect" });
+
+    user.password = newPassword;
+    await user.save(); // triggers pre-save hash
+    res.json({ success: true, message: "Password changed successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

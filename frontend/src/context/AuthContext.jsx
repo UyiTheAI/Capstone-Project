@@ -89,8 +89,9 @@ export function AuthProvider({ children }) {
   };
 
   const updateUser = (u) => {
-    setUser(u);
-    localStorage.setItem("shiftup_user", JSON.stringify(u));
+    const merged = { ...user, ...u };
+    setUser(merged);
+    localStorage.setItem("shiftup_user", JSON.stringify(merged));
   };
 
   const dismissTrial = () => setShowTrial(false);
