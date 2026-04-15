@@ -1,6 +1,8 @@
 require("dotenv").config();
 const express      = require("express");
 const cors         = require("cors");
+const session      = require("express-session");
+const passport     = require("./config/passport");
 const connectDB    = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
 const logger       = require("./middleware/logger");
@@ -10,9 +12,18 @@ const app = express();
 
 const allowedOrigins = process.env.NODE_ENV === "production"
   ? [process.env.FRONTEND_URL, "https://shift-up.netlify.app"].filter(Boolean)
-  : ["http://localhost:3000", "http://localhost:3001"];
+  : ["http://localhost:3000", "http://localhost:3001", process.env.FRONTEND_URL].filter(Boolean);
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "shiftup-session",
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === "production", maxAge: 15 * 60 * 1000 },
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Stripe webhook needs raw body — register BEFORE express.json()
 app.post(

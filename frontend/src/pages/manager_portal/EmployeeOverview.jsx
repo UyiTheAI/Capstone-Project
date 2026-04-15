@@ -7,7 +7,8 @@ const S_COLOR = { present:"#16a34a", late:"#f59e0b", "no-show":"#dc2626", absent
 const S_BG    = { present:"#dcfce7", late:"#fff8e1", "no-show":"#fee2e2", absent:"#fee2e2" };
 
 export default function EmployeeOverview() {
-  const { t } = useLanguage();  const [tab,          setTab]          = useState("mark");
+  const { t } = useLanguage();
+  const [tab,          setTab]          = useState("mark");
   const [summaries,    setSummaries]    = useState([]);
   const [shifts,       setShifts]       = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);

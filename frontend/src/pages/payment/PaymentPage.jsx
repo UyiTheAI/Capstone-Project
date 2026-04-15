@@ -179,7 +179,7 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
 
           <div style={{ background:"#f0fdf4", border:"1.5px solid #86efac", borderRadius:12, padding:"14px 18px", marginBottom:20, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
-              <div style={{ fontWeight:800, fontSize:15, color:"#166534" }}>🎁 7-Day Free Trial</div>
+              <div style={{ fontWeight:800, fontSize:15, color:"#166534" }}>7-Day Free Trial</div>
               <div style={{ fontSize:12, color:"#166534", opacity:.8 }}>
                 Card saved now · Charged after {new Date(Date.now()+7*24*60*60*1000).toLocaleDateString()}
               </div>
@@ -194,7 +194,7 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
           )}
 
           <div style={{ marginBottom:16 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:"#555", marginBottom:10 }}>🔒 Card Details</div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#555", marginBottom:10 }}>Card Details</div>
 
             {step === "loading" && (
               <div style={{ height:100, display:"flex", alignItems:"center", justifyContent:"center", background:"#f9f9f7", borderRadius:12, border:"1px dashed #e0e0e0" }}>
@@ -233,11 +233,11 @@ export default function PaymentPage({ onBack, onGoToLogin }) {
           </div>
 
           <button onClick={handlePay} disabled={step!=="ready"} style={{ width:"100%", padding:"16px 0", background: step!=="ready"?"#e5e5e5":"#f5b800", color: step!=="ready"?"#aaa":"#1a1a1a", border:"none", borderRadius:12, fontFamily:"var(--font-body)", fontWeight:800, fontSize:16, cursor: step!=="ready"?"not-allowed":"pointer", marginBottom:12 }}>
-            {step==="processing"?"⏳ Creating your account…":step==="loading"?"⏳ Loading…":step==="error"?"⚠️ Fix error above":"🚀 Start Free Trial — $0 Today"}
+            {step==="processing"?"⏳ Creating your account…":step==="loading"?"⏳ Loading…":step==="error"?"⚠️ Fix error above":"Start Free Trial — $0 Today"}
           </button>
 
           <div style={{ textAlign:"center", fontSize:12, color:"#aaa", marginBottom:12 }}>
-            🔒 256-bit SSL · PCI-DSS compliant · Powered by Stripe
+            256-bit SSL · PCI-DSS compliant · Powered by Stripe
           </div>
 
           <button onClick={onBack} style={{ width:"100%", padding:10, background:"transparent", color:"#aaa", border:"none", cursor:"pointer", fontSize:13, fontFamily:"var(--font-body)" }}>

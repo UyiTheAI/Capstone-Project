@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import api from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterStaff() {
   const { user } = useAuth();
   const isOwner  = user?.role === "owner";
+  const { t } = useLanguage();
 
   const [role,         setRole]         = useState("employee");
   const [firstName,    setFirstName]    = useState("");
@@ -43,7 +45,7 @@ export default function RegisterStaff() {
     if (!lastName.trim())  { setError("Last name is required."); return; }
     if (!email.trim())     { setError("Email is required."); return; }
     if (!password)         { setError("Password is required."); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (password.length < 6) { setError(t("errPasswordShort")); return; }
     if (!/\S+@\S+\.\S+/.test(email)) { setError("Please enter a valid email."); return; }
 
     setLoading(true);

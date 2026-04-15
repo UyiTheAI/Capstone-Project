@@ -150,17 +150,17 @@ export default function PortalLayout({ portalLabel, navSections, view, setView, 
                     <div className="notif-pop">
                       <div className="notif-head">
                         <div>
-                          <div style={{ fontWeight:800,fontSize:14 }}>Notifications</div>
-                          {unreadCount>0&&<div style={{ fontSize:11,color:"#aaa",marginTop:2 }}>{unreadCount} unread</div>}
+                          <div style={{ fontWeight:800,fontSize:14 }}>{t("notificationsTitle")}</div>
+                          {unreadCount>0&&<div style={{ fontSize:11,color:"#aaa",marginTop:2 }}>{unreadCount} {t("unread")}</div>}
                         </div>
                         <div style={{ display:"flex",gap:8 }}>
-                          {unreadCount>0&&<button onClick={onMarkAllRead} style={{ fontSize:11,color:"#f5b800",fontWeight:700,background:"#fff8e1",border:"none",cursor:"pointer",fontFamily:"var(--font-body)",padding:"4px 8px",borderRadius:6 }}>Mark all read</button>}
+                          {unreadCount>0&&<button onClick={onMarkAllRead} style={{ fontSize:11,color:"#f5b800",fontWeight:700,background:"#fff8e1",border:"none",cursor:"pointer",fontFamily:"var(--font-body)",padding:"4px 8px",borderRadius:6 }}>{t("markAllRead")}</button>}
                           <button onClick={()=>setShowNotif(false)} style={{ width:28,height:28,borderRadius:8,background:"#f0f0ec",border:"none",cursor:"pointer",fontSize:14,color:"#888",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
                         </div>
                       </div>
                       <div className="notif-list">
                         {notifications.length===0?(
-                          <div style={{ padding:"40px 20px",textAlign:"center",color:"#ccc" }}><div style={{ fontSize:32,marginBottom:8 }}>🔔</div><div style={{ fontSize:13 }}>No notifications yet</div></div>
+                          <div style={{ padding:"40px 20px",textAlign:"center",color:"#ccc" }}><div style={{ fontSize:32,marginBottom:8 }}>🔔</div><div style={{ fontSize:13 }}>{t("noNotifsYet")}</div></div>
                         ):(
                           notifications.slice(0,20).map(n=>{
                             const ic=NTYPE[n.type]||NTYPE.SHIFT_ALERT;
@@ -180,7 +180,7 @@ export default function PortalLayout({ portalLabel, navSections, view, setView, 
                       </div>
                       {notifications.length>0&&(
                         <div style={{ padding:"10px 18px",borderTop:"1px solid #f0f0f0",textAlign:"center" }}>
-                          <button onClick={()=>{setView?.("notifications");setShowNotif(false);}} style={{ fontSize:12,color:"#888",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font-body)" }}>View all notifications →</button>
+                          <button onClick={()=>{setView?.("notifications");setShowNotif(false);}} style={{ fontSize:12,color:"#888",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font-body)" }}>{t("viewAllNotifs")}</button>
                         </div>
                       )}
                     </div>

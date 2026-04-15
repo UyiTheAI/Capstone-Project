@@ -74,7 +74,7 @@ export default function ManagerDashboard({ user, onGoToSwaps }) {
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"70vh", flexDirection:"column", gap:16 }}>
       <div style={{ width:36, height:36, border:"3px solid #f5b800", borderTopColor:"transparent", borderRadius:"50%", animation:"spin .8s linear infinite" }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <span style={{ color:"#aaa", fontSize:13 }}>Loading dashboard…</span>
+      <span style={{ color:"#aaa", fontSize:13 }}>{t("loadingDashboard")||"Loading dashboard…"}</span>
     </div>
   );
 

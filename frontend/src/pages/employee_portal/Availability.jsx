@@ -42,7 +42,7 @@ export default function Availability({ user }) {
       <div style={{ background:"#1a1a1a",borderRadius:16,padding:"22px 24px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16 }}>
         <div>
           <div style={{ fontFamily:"var(--font-head)",fontSize:22,color:"#f5b800",letterSpacing:1 }}>{t("availabilityTitle")}</div>
-          <div style={{ fontSize:13,color:"#666",marginTop:4 }}>{filled} of {DAYS.length*SLOTS.length} slots available this week</div>
+          <div style={{ fontSize:13,color:"#666",marginTop:4 }}>{filled} {t("slotsAvailLabel")||"of "+(DAYS.length*SLOTS.length)+" slots available this week"}</div>
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
           <select value={availType} onChange={e=>setAvailType(e.target.value)}
@@ -64,10 +64,10 @@ export default function Availability({ user }) {
       <div style={{ display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center" }}>
         <span style={{ fontSize:12,color:"#aaa",marginRight:4 }}>{t("quickSelect")}:</span>
         {[
-          ["All available",  ()=>setAvail(Object.fromEntries(DAYS.map(d=>[d,{morning:true,afternoon:true,evening:true}])))],
-          ["Weekdays only",  ()=>setAvail(Object.fromEntries(DAYS.map((d,i)=>[d,{morning:i<5,afternoon:i<5,evening:false}])))],
-          ["Mornings only",  ()=>setAvail(Object.fromEntries(DAYS.map(d=>[d,{morning:true,afternoon:false,evening:false}])))],
-          ["Clear all",      ()=>setAvail(Object.fromEntries(DAYS.map(d=>[d,{morning:false,afternoon:false,evening:false}])))],
+          [t("availQuickAll"),  ()=>setAvail(Object.fromEntries(DAYS.map(d=>[d,{morning:true,afternoon:true,evening:true}])))],
+          [t("availQuickWeekdays"),  ()=>setAvail(Object.fromEntries(DAYS.map((d,i)=>[d,{morning:i<5,afternoon:i<5,evening:false}])))],
+          [t("availQuickMornings"),  ()=>setAvail(Object.fromEntries(DAYS.map(d=>[d,{morning:true,afternoon:false,evening:false}])))],
+          [t("availQuickClear"),      ()=>setAvail(Object.fromEntries(DAYS.map(d=>[d,{morning:false,afternoon:false,evening:false}])))],
         ].map(([l,fn])=>(
           <button key={l} onClick={fn}
             style={{ padding:"6px 14px",background:"#fff",border:"1.5px solid #e5e5e5",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer",fontFamily:"var(--font-body)" }}
@@ -80,7 +80,7 @@ export default function Availability({ user }) {
       <div style={{ background:"#fff",borderRadius:16,border:"1px solid #ebebeb",overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,.04)" }}>
         {/* Day headers */}
         <div style={{ display:"grid",gridTemplateColumns:"110px repeat(7,1fr)",background:"#1a1a1a" }}>
-          <div style={{ padding:"12px 16px",fontSize:11,color:"#555",fontWeight:700,textTransform:"uppercase" }}>Slot</div>
+          <div style={{ padding:"12px 16px",fontSize:11,color:"#555",fontWeight:700,textTransform:"uppercase" }}>{t("timeSlot")||"Slot"}</div>
           {DAYS.map((d,i)=>{
             const now=new Date(), diff=(i+1)-(now.getDay()||7), dd=new Date(now); dd.setDate(now.getDate()+diff);
             const isToday=dd.toDateString()===now.toDateString();

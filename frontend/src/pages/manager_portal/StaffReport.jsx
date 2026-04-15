@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import api from "../../api";
 import "../../App.css";
 
@@ -7,16 +8,17 @@ const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1
   .toISOString().split("T")[0];
 
 export default function StaffReport() {
+  const { t } = useLanguage();
   const [from,    setFrom]    = useState(firstOfMonth);
   const [to,      setTo]      = useState(todayStr);
   const [report,  setReport]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
-  const generate = useCallback(async (f, t) => {
+  const generate = useCallback(async (f, toDate) => {
     setLoading(true); setError(""); setReport(null);
     try {
-      const res = await api.get(`/attendance/report?from=${f}&to=${t}`);
+      const res = await api.get(`/attendance/report?from=${f}&to=${toDate}`);
       setReport(res.data);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || "Failed to load report.";
@@ -89,9 +91,9 @@ export default function StaffReport() {
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24, flexWrap:"wrap", gap:12 }}>
         <div>
-          <div className="su-title" style={{ marginBottom:4 }}>STAFF REPORTS</div>
+          <div className="su-title" style={{ marginBottom:4 }}>{t("staffReports")||"STAFF REPORTS"}</div>
           <div style={{ fontSize:14, color:"#888" }}>
-            Attendance history and payroll summary for your team
+            {t("reportSubtitle")}
           </div>
         </div>
         {report?.report?.length > 0 && (

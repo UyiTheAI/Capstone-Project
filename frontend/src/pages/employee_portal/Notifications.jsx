@@ -3,15 +3,6 @@ import api from "../../api";
 import "../../App.css";
 import { useLanguage } from "../../context/LanguageContext";
 
-const TYPES = {
-  APPROVED:           { icon:"✓",  bg:"#dcfce7", color:"#16a34a", label:"Approved"  },
-  REJECTED:           { icon:"✗",  bg:"#fee2e2", color:"#dc2626", label:"Rejected"  },
-  SCHEDULE_PUBLISHED: { icon:"📅", bg:"#dbeafe", color:"#2563eb", label:"Schedule"  },
-  SWAP_REQUEST:       { icon:"🔄", bg:"#fef9c3", color:"#a16207", label:"Swap"      },
-  SHIFT_ALERT:        { icon:"⚠",  bg:"#fde8e0", color:"#e05a20", label:"Alert"     },
-  TIP:                { icon:"💰", bg:"#fef9c3", color:"#a16207", label:"Tip"       },
-};
-
 const ago = (d) => {
   const m=Math.floor((Date.now()-new Date(d))/60000);
   if(m<1)return "just now"; if(m<60)return `${m}m ago`;
@@ -24,6 +15,15 @@ export default function Notifications({ onRead }) {
   const [notifs, setNotifs]  = useState([]);
   const [loading,setLoading] = useState(true);
   const [filter, setFilter]  = useState("all");
+
+  const TYPES = {
+    APPROVED:           { icon:"✓",  bg:"#dcfce7", color:"#16a34a", label:t("statusApproved")     },
+    REJECTED:           { icon:"✗",  bg:"#fee2e2", color:"#dc2626", label:t("statusRejected")     },
+    SCHEDULE_PUBLISHED: { icon:"📅", bg:"#dbeafe", color:"#2563eb", label:t("notifScheduleLabel") },
+    SWAP_REQUEST:       { icon:"🔄", bg:"#fef9c3", color:"#a16207", label:t("notifSwapLabel")     },
+    SHIFT_ALERT:        { icon:"⚠",  bg:"#fde8e0", color:"#e05a20", label:t("notifShiftLabel")    },
+    TIP:                { icon:"💰", bg:"#fef9c3", color:"#a16207", label:t("notifTipLabel")      },
+  };
 
   useEffect(()=>{ fetchAll(); },[]);
 
@@ -49,14 +49,13 @@ export default function Notifications({ onRead }) {
       <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12 }}>
         <div>
           <div style={{ fontFamily:"var(--font-head)",fontSize:24,letterSpacing:1 }}>{t("notificationsTitle")}</div>
-          <div style={{ fontSize:13,color:"#aaa",marginTop:3 }}>{unread>0?`${unread} unread`:"All caught up"}</div>
+          <div style={{ fontSize:13,color:"#aaa",marginTop:3 }}>{unread>0?`${unread} ${t("unread")}`:t("allCaughtUp")}</div>
         </div>
         {unread>0&&<button onClick={markAllRead} className="su-btn su-btn-outline su-btn-sm">{t("markAllRead")}</button>}
       </div>
 
-      {/* Filters */}
       <div style={{ display:"flex",gap:6,marginBottom:16 }}>
-        {[["all",`All (${notifs.length})`],["unread",`Unread (${unread})`]].map(([k,l])=>(
+        {[["all",`${t("all")} (${notifs.length})`],["unread",`${t("unread")} (${unread})`]].map(([k,l])=>(
           <button key={k} onClick={()=>setFilter(k)}
             style={{ padding:"7px 16px",borderRadius:8,border:"1.5px solid",fontFamily:"var(--font-body)",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all .15s",
               borderColor:filter===k?"#1a1a1a":"#e5e5e5",background:filter===k?"#1a1a1a":"#fff",color:filter===k?"#fff":"#555" }}>
@@ -70,13 +69,13 @@ export default function Notifications({ onRead }) {
           <div style={{ padding:"60px 20px",textAlign:"center",color:"#aaa" }}>
             <div style={{ width:28,height:28,border:"3px solid #f5b800",borderTopColor:"transparent",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto 12px" }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            Loading…
+            {t("loading")}
           </div>
         ) : filtered.length===0 ? (
           <div style={{ padding:"60px 20px",textAlign:"center" }}>
             <div style={{ fontSize:40,marginBottom:12 }}>🔔</div>
-            <div style={{ fontWeight:700,fontSize:15,color:"#1a1a1a",marginBottom:6 }}>{filter==="unread"?"No unread notifications":t("noNotifications")}</div>
-            <div style={{ fontSize:13,color:"#aaa" }}>You're all caught up!</div>
+            <div style={{ fontWeight:700,fontSize:15,color:"#1a1a1a",marginBottom:6 }}>{filter==="unread"?t("noUnreadNotifs"):t("noNotifications")}</div>
+            <div style={{ fontSize:13,color:"#aaa" }}>{t("allCaughtUp")}</div>
           </div>
         ) : (
           filtered.map((n,i)=>{

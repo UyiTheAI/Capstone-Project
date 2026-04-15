@@ -14,7 +14,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       const firstName = profile.name?.givenName  || "User";
       const lastName  = profile.name?.familyName || "";
       const avatar    = profile.photos?.[0]?.value;
-      const role      = ["employee","manager","owner"].includes(req.query?.role) ? req.query.role : "employee";
+
+      // Role priority: session (set by /google route) > query param > default
+      const sessionRole = req.session?.oauthRole;
+      const rawRole = sessionRole || req.query?.role || "employee";
+      const role = ["employee","manager","owner"].includes(rawRole) ? rawRole : "employee";
 
       if (!email) return done(new Error("No email from Google"), null);
 

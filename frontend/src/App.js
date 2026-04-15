@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import api from "./api";
@@ -7,10 +8,11 @@ import Home            from "./pages/homepage/Home";
 import GetStartedModal from "./pages/homepage/GetStartedModal";
 import Login           from "./pages/employee_login/Login";
 import Register        from "./pages/employee_login/Register";
+import OAuthCallback   from "./pages/employee_login/OAuthCallback";
 import PaymentPage     from "./pages/payment/PaymentPage";
 import EmployeePortal  from "./pages/employee_portal/EmployeePortal";
-import ManagerPortal      from "./pages/manager_portal/ManagerPortal";
-import ResubscribePage   from "./pages/payment/ResubscribePage";
+import ManagerPortal   from "./pages/manager_portal/ManagerPortal";
+import ResubscribePage from "./pages/payment/ResubscribePage";
 
 /* ── Subscription gate — shown ONLY to owners with inactive sub ── */
 function SubscriptionGate({ onResubscribe, onLogout }) {
@@ -172,11 +174,21 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Handle OAuth popup callback before mounting providers
+  const isOAuthCallback =
+    window.location.pathname === "/oauth-callback" ||
+    window.location.search.includes("data=") ||
+    window.location.search.includes("error=google");
+
+  if (isOAuthCallback) return <OAuthCallback />;
+
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </LanguageProvider>
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || ""}>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </LanguageProvider>
+    </GoogleOAuthProvider>
   );
 }

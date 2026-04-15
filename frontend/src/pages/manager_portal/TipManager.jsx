@@ -330,7 +330,7 @@ export default function TipManager() {
                   </div>
 
                   <div style={{ marginTop:8, fontSize:11, color:"#bbb" }}>
-                    Recorded by {tip.recordedBy?.name || `${tip.recordedBy?.firstName||""} ${tip.recordedBy?.lastName||""}`} · {new Date(tip.createdAt).toLocaleString()}
+                    {t("recordedBy")||"Recorded by"} {tip.recordedBy?.name || `${tip.recordedBy?.firstName||""} ${tip.recordedBy?.lastName||""}`} · {new Date(tip.createdAt).toLocaleString()}
                   </div>
                 </div>
               ))}

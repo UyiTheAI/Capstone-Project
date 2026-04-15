@@ -498,7 +498,7 @@ export default function ManagerSchedule({ user }) {
         {/* Totals */}
         {!loading && visibleEmps.length > 0 && (
           <div style={{ display:"grid", gridTemplateColumns:"190px repeat(7,1fr)", borderTop:"2px solid #f0f0ec", background:"#f8f8f6" }}>
-            <div style={{ padding:"10px 14px", fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.5, display:"flex", alignItems:"center" }}>Daily Coverage</div>
+            <div style={{ padding:"10px 14px", fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.5, display:"flex", alignItems:"center" }}>{t("dailyCoverageFooter")||"Daily Coverage"}</div>
             {days.map((d, i) => {
               const dk      = isoDate(d);
               const count   = shiftsOnDay(dk).length;
@@ -517,7 +517,7 @@ export default function ManagerSchedule({ user }) {
 
       {/* LEGEND */}
       <div style={{ display:"flex", gap:12, marginTop:16, flexWrap:"wrap", alignItems:"center" }}>
-        <span style={{ fontSize:10, color:"#aaa", fontWeight:700, textTransform:"uppercase", letterSpacing:1 }}>Roles:</span>
+        <span style={{ fontSize:10, color:"#aaa", fontWeight:700, textTransform:"uppercase", letterSpacing:1 }}>{t("rolesLegend")||"Roles"}:</span>
         {Object.entries(ROLE_COLORS).map(([role,c])=>(
           <div key={role} style={{ display:"flex", alignItems:"center", gap:5 }}>
             <div style={{ width:10, height:10, borderRadius:3, background:c.bg }} />
@@ -526,12 +526,12 @@ export default function ManagerSchedule({ user }) {
         ))}
         <div style={{ marginLeft:8, display:"flex", alignItems:"center", gap:5 }}>
           <div style={{ width:10, height:10, borderRadius:3, border:"2px dashed #999" }} />
-          <span style={{ fontSize:11, color:"#888" }}>Draft</span>
+          <span style={{ fontSize:11, color:"#888" }}>{t("draftLegend")||"Draft"}</span>
         </div>
       </div>
 
       <div style={{ marginTop:14, background:"#f0f7ff", borderRadius:12, padding:"10px 16px", fontSize:12, color:"#3b82f6", border:"1px solid #bfdbfe" }}>
-        💡 Click empty cell to add shift · Click existing shift to edit/delete · Drafts have dashed border
+        {t("scheduleHint")||"💡 Click empty cell to add shift · Click existing shift to edit/delete · Drafts have dashed border"}
       </div>
     </div>
   );
