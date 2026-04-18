@@ -84,4 +84,23 @@ router.post("/", protect, authorize("owner","manager"), async (req, res) => {
   } catch(err) { res.status(400).json({ success:false, message:err.message }); }
 });
 
+// DELETE /api/tips/:id — remove a tip record (owner/manager only)
+router.delete("/:id", protect, authorize("owner","manager"), async (req, res) => {
+  try {
+    const tip = await Tip.findById(req.params.id);
+    if (!tip) return res.status(404).json({ success:false, message:"Tip record not found" });
+
+    // Ensure the requester belongs to the same org as this tip
+    const empIds = await getMyEmployeeIds(req.user._id, req.user.role);
+    const empStrings = empIds.map(id => id.toString());
+    const belongsToOrg = tip.distributions.some(d => empStrings.includes(d.employee.toString()));
+    if (!belongsToOrg && tip.recordedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success:false, message:"Not authorized to delete this record" });
+    }
+
+    await tip.deleteOne();
+    res.json({ success:true, message:"Tip record deleted" });
+  } catch(err) { res.status(500).json({ success:false, message:err.message }); }
+});
+
 module.exports = router;
