@@ -10,20 +10,22 @@ const logger       = require("./middleware/logger");
 connectDB();
 const app = express();
 
-// Allow all Replit dev/prod domains plus localhost
+// Allow all Replit dev/prod domains, Netlify, and localhost
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, same-origin)
+    // Allow requests with no origin (curl, Postman, mobile apps)
     if (!origin) return callback(null, true);
     // Allow localhost for local dev
     if (origin.startsWith("http://localhost")) return callback(null, true);
-    // Allow any *.replit.dev or *.repl.co domain
+    // Allow any *.replit.dev / *.repl.co / *.replit.app domain
     if (/\.(replit\.dev|repl\.co|replit\.app)$/.test(origin)) return callback(null, true);
-    // Allow explicitly configured frontend URL
+    // Allow any *.netlify.app domain (covers previews + production)
+    if (/\.netlify\.app$/.test(origin)) return callback(null, true);
+    // Allow explicitly configured frontend URL (custom domain support)
     if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
-    // Allow Netlify deploy
-    if (origin === "https://shift-up.netlify.app") return callback(null, true);
-    callback(null, true); // permissive for development
+    // Development fallback — permissive
+    if (process.env.NODE_ENV !== "production") return callback(null, true);
+    callback(new Error("CORS: origin not allowed"));
   },
   credentials: true,
 }));
