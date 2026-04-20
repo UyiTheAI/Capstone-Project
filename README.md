@@ -50,7 +50,7 @@ owner@shiftup.com (Owner)
 | CVC | 123 |
 | ZIP | 12345 |
 
-> Stripe is in **LIVE MODE**. Use a real card on production. Test card works locally only.
+> ⚠️ Stripe is in **LIVE MODE** on production. Use the test card above only in local development. A real card is required on the live site.  
 > After payment a confirmation email is sent with your login credentials.
 
 ---
@@ -73,7 +73,7 @@ cd Capstone-Project
 ```bash
 cd backend
 npm install
-cp .env.example .env   # fill in values (see below)
+cp .env.production .env   # fill in your values
 npm start
 # → http://localhost:5000
 ```
@@ -82,7 +82,6 @@ npm start
 ```bash
 cd frontend
 npm install
-cp .env.example .env   # fill in values (see below)
 npm start
 # → http://localhost:3000
 ```
@@ -97,6 +96,8 @@ Creates: 1 owner, 1 manager, 2 employees, current week shifts, attendance record
 ---
 
 ## 🔧 Environment Variables
+
+> **Never commit real secrets to git.** Set these in your hosting platform's dashboard, not in files tracked by git.
 
 ### Backend (`backend/.env`)
 
@@ -113,36 +114,48 @@ GOOGLE_CLIENT_ID=from_google_cloud_console
 GOOGLE_CLIENT_SECRET=from_google_cloud_console
 GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
 
-STRIPE_SECRET_KEY=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
-STRIPE_WEBHOOK_SECRET=whsec_kFslEnBhgSUlLpPGK0JJzawvuY0dY0DS
-STRIPE_PRICE_ID=price_1TIAygRpyU2rhUpUBJkTfBTQ
+STRIPE_SECRET_KEY=sk_live_...your_stripe_secret_key...
+STRIPE_WEBHOOK_SECRET=whsec_...your_webhook_secret...
+STRIPE_PRICE_ID=price_...your_price_id...
 
-
+GMAIL_USER=your_gmail@gmail.com
+GMAIL_PASS=your_gmail_app_password
 ```
 
 ### Frontend (`frontend/.env`)
 
 ```env
 REACT_APP_API_URL=http://localhost:5000/api
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_51THoHnRpyU2rhUpUlGnbMztzZHSjELvdxvwdW8SsaeOdIlU4Eu98aSy2nykX24ipcNZgCKIxrwrVUkBznRtVIonL000e9ZIvhD
-
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_...your_stripe_publishable_key...
+REACT_APP_GOOGLE_CLIENT_ID=from_google_cloud_console
 ```
 
 ### Production (Render + Netlify)
 
-**Render env vars:**
+Set these directly in each platform's **Environment Variables** dashboard — do not put real values in `.env` files committed to git.
+
+**Render (backend) env vars:**
 ```
-STRIPE_SECRET_KEY     = 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
-STRIPE_PRICE_ID       = price_1TIAygRpyU2rhUpUBJkTfBTQ
-STRIPE_WEBHOOK_SECRET = whsec_kFslEnBhgSUlLpPGK0JJzawvuY0dY0DS
-FRONTEND_URL          = https://shift-up.netlify.app
-NODE_ENV              = production
+MONGO_URI              = your MongoDB Atlas connection string
+JWT_SECRET             = your JWT secret
+SESSION_SECRET         = your session secret
+NODE_ENV               = production
+FRONTEND_URL           = https://shift-up.netlify.app
+GOOGLE_CLIENT_ID       = from Google Cloud Console
+GOOGLE_CLIENT_SECRET   = from Google Cloud Console
+GOOGLE_CALLBACK_URL    = https://capstone-project-4-w5io.onrender.com/api/auth/google/callback
+STRIPE_SECRET_KEY      = sk_live_...your_stripe_secret_key...
+STRIPE_PRICE_ID        = price_...your_price_id...
+STRIPE_WEBHOOK_SECRET  = whsec_...your_webhook_secret...
+GMAIL_USER             = your_gmail@gmail.com
+GMAIL_PASS             = your_gmail_app_password
 ```
 
-**Netlify env vars:**
+**Netlify (frontend) env vars:**
 ```
 REACT_APP_API_URL                = https://capstone-project-4-w5io.onrender.com/api
-REACT_APP_STRIPE_PUBLISHABLE_KEY=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
+REACT_APP_STRIPE_PUBLISHABLE_KEY = pk_live_...your_stripe_publishable_key...
+REACT_APP_GOOGLE_CLIENT_ID       = from Google Cloud Console
 ```
 
 ---
@@ -155,7 +168,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=sk_live_51THoHnRpyU2rhUpUZfgDuaU72qZtjLf75dFKFb
 4. Staff log in with their email and temporary password
 5. Staff can change their password from **Profile → Password tab**
 
-> There is NO public registration page. All accounts are created by owner or manager.
+> There is NO public registration page. All accounts are created by the owner or a manager.
 
 ---
 
@@ -165,7 +178,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=sk_live_51THoHnRpyU2rhUpUZfgDuaU72qZtjLf75dFKFb
 - Three-portal login: Employee / Manager / Owner
 - Google OAuth (role-based)
 - JWT with 7-day expiry
-- No public registration
+- No public registration — accounts created by owner or manager only
 
 ### Payment & Subscription
 - 7-day free trial via Stripe SetupIntent (card saved, $0 today)
@@ -202,15 +215,16 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=sk_live_51THoHnRpyU2rhUpUZfgDuaU72qZtjLf75dFKFb
 
 ### Tips
 - Owner/Manager distributes tips (equal or manual split)
+- Delete tip records from tip history
 - Employee sees tip history with totals in Notifications → Tips tab
 
 ### Profile
-- Photo upload (max 2MB) from all portals
+- Photo upload (max 2MB) — persists across sessions and logins
 - In-app password change (requires current password)
 - Owner subscription management with cancel
 
 ### Other
-- 9 language support (EN, ES, FR, PT, HI, JA, ZH, MR, KO)
+- 7 language support (EN, ES, FR, PT, HI, ZH, KO)
 - Real-time notification badge
 - Tip history in employee Notifications tab
 
@@ -221,24 +235,29 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=sk_live_51THoHnRpyU2rhUpUZfgDuaU72qZtjLf75dFKFb
 ```
 Capstone-Project/
 ├── backend/
-│   ├── config/           # DB + Passport OAuth
-│   ├── middleware/        # JWT auth
-│   ├── models/            # Mongoose schemas
-│   ├── routes/            # Express API routes
-│   ├── utils/             # getMyEmployees org helper
-│   ├── seed.js            # Demo data seeder
-│   └── server.js          # Entry point
+│   ├── config/            # DB + Passport OAuth
+│   ├── middleware/         # JWT auth + error handler + logger
+│   ├── models/             # Mongoose schemas
+│   ├── routes/             # Express API routes
+│   ├── utils/              # getMyEmployees org hierarchy helper
+│   ├── seed.js             # Demo data seeder
+│   └── server.js           # Entry point
 │
-└── frontend/src/
-    ├── context/           # Auth + Language
-    ├── components/        # ProfileCard, ChangePassword
-    └── pages/
-        ├── homepage/      # Home, Pricing, GetStartedModal
-        ├── employee_login/# Login, OAuthCallback
-        ├── payment/       # PaymentPage (Stripe)
-        ├── subscription/  # SubscriptionRedirects
-        ├── employee_portal/
-        └── manager_portal/
+└── frontend/
+    ├── netlify.toml         # Netlify build config
+    ├── public/
+    │   └── _redirects       # SPA routing fix for Netlify
+    └── src/
+        ├── api.js            # Axios client (reads REACT_APP_API_URL)
+        ├── context/          # Auth + Language context
+        ├── components/       # ProfileCard, ChangePassword, PortalLayout
+        └── pages/
+            ├── homepage/     # Home, Pricing, GetStartedModal
+            ├── employee_login/  # Login, OAuthCallback
+            ├── payment/      # PaymentPage (Stripe)
+            ├── subscription/  # SubscriptionRedirects
+            ├── employee_portal/
+            └── manager_portal/
 ```
 
 ---
@@ -248,23 +267,25 @@ Capstone-Project/
 ### Render (Backend)
 | Setting | Value |
 |---------|-------|
-| Root Directory | backend |
-| Build Command | npm install |
-| Start Command | node server.js |
+| Root Directory | `backend` |
+| Build Command | `npm install` |
+| Start Command | `node server.js` |
 
 ### Netlify (Frontend)
 | Setting | Value |
 |---------|-------|
-| Base Directory | frontend |
-| Build Command | npm run build |
-| Publish Directory | frontend/build |
+| Base Directory | `frontend` |
+| Build Command | `npm run build` |
+| Publish Directory | `frontend/build` |
 
 ### Post-deploy checklist
-1. Update `FRONTEND_URL` in Render → Netlify URL
-2. Update `GOOGLE_CALLBACK_URL` in Render → Render backend URL
-3. Update `REACT_APP_API_URL` in Netlify → Render URL + `/api`
-4. Redeploy both after env var changes
-5. Run `node seed.js` against production DB
+1. Set all env vars in Render dashboard (never in committed files)
+2. Set all env vars in Netlify dashboard
+3. Update `FRONTEND_URL` in Render → your Netlify URL
+4. Update `GOOGLE_CALLBACK_URL` in Render → your Render backend URL
+5. Update `REACT_APP_API_URL` in Netlify → your Render URL + `/api`
+6. Redeploy both services after env var changes
+7. Run `node seed.js` against production DB if needed
 
 ---
 
@@ -273,6 +294,7 @@ Capstone-Project/
 | Endpoint | Auth | Description |
 |----------|------|-------------|
 | POST /api/auth/login | No | Login all roles |
+| PUT /api/auth/me | JWT | Update profile + avatar |
 | PUT /api/auth/change-password | JWT | Change password |
 | POST /api/subscription/setup-intent | No | Stripe SetupIntent |
 | POST /api/subscription/register-and-activate | No | Register owner after payment |
@@ -289,8 +311,10 @@ Capstone-Project/
 | GET /api/attendance/summary | JWT Mgr/Owner | Attendance overview |
 | GET /api/attendance/report | JWT Mgr/Owner | Date-range report |
 | POST /api/attendance | JWT Mgr/Owner | Mark attendance |
+| GET /api/tips | JWT Mgr/Owner | Org tip history |
 | GET /api/tips/mine | JWT Employee | My tip history |
 | POST /api/tips | JWT Owner/Mgr | Distribute tips |
+| DELETE /api/tips/:id | JWT Owner/Mgr | Delete tip record |
 
 ---
 
@@ -298,21 +322,22 @@ Capstone-Project/
 
 | Issue | Solution |
 |-------|----------|
-| Backend 404 | Check all routes in server.js. Ensure `attendance.js` is registered. |
-| Login 500 | Check `backend/models/User.js` has `matchPassword` method. |
-| No employees in schedule | Run `node seed.js` or register employees via Register Staff tab. |
-| Stripe form not loading | Check `REACT_APP_STRIPE_PUBLISHABLE_KEY` in frontend .env. |
-| Stripe 400 SetupIntent | Stale intent — backend now cancels old ones before creating new. |
-| Payment method not attached | Backend retrieves setupIntent from Stripe to get actual PM ID. |
-| No email after payment | Set `EMAIL_USER` and `EMAIL_PASS` (Gmail App Password) in .env. |
-| Cannot see staff | Staff filtered by `createdBy`. Login as the account that registered them. |
-| New owner sees no data | Correct — register staff first via Register Staff tab. |
-| utils not found | Create `backend/utils/` folder and copy `getMyEmployees.js` into it. |
-| Render slow to load | Free tier spins down — wait 30–60s on first request. |
+| Backend 404 | Check all routes registered in `server.js` |
+| Login 500 | Check `backend/models/User.js` has `matchPassword` method |
+| No employees in schedule | Run `node seed.js` or register employees via Register Staff tab |
+| Stripe form not loading | Check `REACT_APP_STRIPE_PUBLISHABLE_KEY` in frontend env |
+| Stripe 400 SetupIntent | Stale intent — backend cancels old ones before creating new |
+| Payment method not attached | Backend retrieves setupIntent from Stripe to get actual PM ID |
+| No email after payment | Set `GMAIL_USER` and `GMAIL_PASS` (Gmail App Password) in env |
+| Cannot see staff | Staff filtered by `createdBy` — login as the account that registered them |
+| New owner sees no data | Correct — register staff first via Register Staff tab |
+| Profile photo not saving | Check body-parser limit (set to 10mb in `server.js`) |
+| GitHub push blocked | Never commit real secrets — set them in hosting platform dashboards |
+| Render slow to load | Free tier spins down — wait 30–60s on first request |
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Authors
 
-**Henil Patel** — Capstone Project, Semester 6
+**Henil Patel** — Capstone Project, Semester 6  
 **Omoruyi Oredia** — Capstone Project, Semester 6
